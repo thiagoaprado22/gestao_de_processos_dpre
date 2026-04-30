@@ -54,7 +54,17 @@ export default function Layout({ children }: { children: ReactNode }) {
               background: "rgba(255,255,255,0.12)",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 16, fontWeight: 800, color: "#fff",
-            }}>U</div>
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 21h18"/>
+                <path d="M5 21V7l7-4 7 4v14"/>
+                <path d="M9 10h.01"/>
+                <path d="M15 10h.01"/>
+                <path d="M9 14h.01"/>
+                <path d="M15 14h.01"/>
+                <path d="M10 21v-4h4v4"/>
+              </svg>
+            </div>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>UFMG</div>
               <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", lineHeight: 1.2 }}>Pré-Compras</div>
@@ -64,7 +74,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             fontSize: 10, color: "rgba(255,255,255,0.35)",
             textTransform: "uppercase", letterSpacing: 1,
           }}>
-            Sistema de Licitações
+            Central de Compras DLO/UFMG
           </div>
         </div>
 
@@ -146,13 +156,18 @@ export default function Layout({ children }: { children: ReactNode }) {
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{
-              fontSize: 12, color: colors.primary[700],
-              background: colors.primary[50],
-              border: `1px solid ${colors.primary[100]}`,
-              padding: "5px 12px", borderRadius: 20,
-            }}>
-              UFMG - DPRE
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <div style={{
+                fontSize: 12, color: colors.primary[700],
+                background: colors.primary[50],
+                border: `1px solid ${colors.primary[100]}`,
+                padding: "5px 12px", borderRadius: 20,
+              }}>
+                UFMG - DPRE
+              </div>
+              <span className="text-xs text-gray-600 border border-gray-300 px-2 py-0.5 rounded ml-2">
+                Versão não oficial
+              </span>
             </div>
           </div>
         </header>
