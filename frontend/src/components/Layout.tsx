@@ -148,7 +148,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               background: colors.gray[100],
               padding: "4px 10px", borderRadius: 20,
             }}>
-              UFMG · DPL
+              UFMG - DPRE
             </div>
           </div>
         </header>
@@ -157,6 +157,30 @@ export default function Layout({ children }: { children: ReactNode }) {
         <div style={{ padding: "28px 32px", flex: 1 }}>
           {children}
         </div>
+
+        {/* Disclaimer institucional */}
+        <footer
+          style={{
+            borderTop: `1px solid ${colors.gray[200]}`,
+            background: "#fff",
+            padding: "14px 32px",
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontSize: 12,
+              lineHeight: 1.5,
+              color: colors.gray[500],
+              textAlign: "center",
+            }}
+          >
+            Os dados apresentados neste sistema são de natureza informativa, baseados em
+            informações públicas e não possuem caráter oficial. Não substituem registros
+            formais ou sistemas institucionais da UFMG, sendo utilizados exclusivamente para
+            fins de apoio à análise e gestão de processos.
+          </p>
+        </footer>
       </main>
     </div>
   );
