@@ -14,6 +14,22 @@ function calcularTempoDias(dataInicio: string | null, dataFim: string | null): n
   return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
 }
 
+function normalizarData(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const raw = value.trim();
+  if (!raw) return null;
+  const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) return raw;
+  const brMatch = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (brMatch) {
+    const [, dd, mm, yyyy] = brMatch;
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString().slice(0, 10);
+}
+
 // Determina etapa atual e tempo em aberto
 function calcularEtapaAtual(fases: Array<{
   ordem: number;
@@ -264,13 +280,17 @@ export const processosRouter = router({
       const updateData: Record<string, unknown> = {};
       if (data.observacao !== undefined) updateData.observacao = data.observacao;
       if (data.status !== undefined) updateData.status = data.status;
-      if (data.dataInicio !== undefined) updateData.dataInicio = data.dataInicio || null;
-      if (data.dataFim !== undefined) updateData.dataFim = data.dataFim || null;
+      if (data.dataInicio !== undefined) updateData.dataInicio = normalizarData(data.dataInicio);
+      if (data.dataFim !== undefined) updateData.dataFim = normalizarData(data.dataFim);
 
       // Calcular tempoDias
       const [fase] = await db.select().from(fasesProcesso).where(eq(fasesProcesso.id, id));
-      const di = (data.dataInicio !== undefined ? data.dataInicio : fase?.dataInicio ? String(fase.dataInicio) : null);
-      const df = (data.dataFim !== undefined ? data.dataFim : fase?.dataFim ? String(fase.dataFim) : null);
+      const di = data.dataInicio !== undefined
+        ? normalizarData(data.dataInicio)
+        : (fase?.dataInicio ? String(fase.dataInicio) : null);
+      const df = data.dataFim !== undefined
+        ? normalizarData(data.dataFim)
+        : (fase?.dataFim ? String(fase.dataFim) : null);
       updateData.tempoDias = calcularTempoDias(di, df);
 
       await db.update(fasesProcesso).set(updateData).where(eq(fasesProcesso.id, id));
