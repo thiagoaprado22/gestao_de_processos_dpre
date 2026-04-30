@@ -147,12 +147,12 @@ export default function Layout({ children }: { children: ReactNode }) {
           top: 0,
           zIndex: 9,
         }}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
-            <span style={{ fontSize: 18, fontWeight: 700, color: colors.primary[800], lineHeight: 1.2 }}>
-              Painel Institucional de Processos
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2 }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: colors.primary[800], lineHeight: 1.2 }}>
+              Tempo dos Processos
             </span>
-            <span style={{ fontSize: 12, color: colors.gray[500] }}>
-              Controle de Processos de Pré-Compras e Licitações
+            <span style={{ fontSize: 11, color: colors.gray[500], lineHeight: 1.3 }}>
+              Análise dos processos recebidos pela Divisão de Pré-Compras
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
