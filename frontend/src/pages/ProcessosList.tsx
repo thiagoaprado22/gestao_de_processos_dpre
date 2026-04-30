@@ -18,21 +18,16 @@ const IconTrend    = () => <svg width="11" height="11" viewBox="0 0 24 24" fill=
 
 function PriorityBadge({ days }: { days: number }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "flex-start" }}>
-      <span style={{ ...base.badge, ...priorityStyle(days), fontSize: 12 }}>
+    <div style={{ display: "flex", alignItems: "center" }}>
+      <span style={{ ...base.badge, ...priorityStyle(days), fontSize: 11, padding: "3px 8px", whiteSpace: "nowrap" }}>
         {days} dias em aberto
       </span>
-      {days > 10 && (
-        <span style={{ fontSize: 10, fontWeight: 700, color: colors.danger.dark, textTransform: "uppercase", letterSpacing: 0.4 }}>
-          ⚠ Tempo elevado
-        </span>
-      )}
     </div>
   );
 }
 
 function SituacaoBadge({ sit }: { sit: string }) {
-  return <span style={{ ...base.badge, ...situacaoStyle(sit) }}>{sit}</span>;
+  return <span style={{ ...base.badge, ...situacaoStyle(sit), fontSize: 11, padding: "3px 8px", whiteSpace: "nowrap" }}>{sit}</span>;
 }
 
 function FilterSelect({ label, value, onChange, options }: {
@@ -277,7 +272,7 @@ export default function ProcessosList() {
       </div>
 
       {/* ── Tabela ── */}
-      <div style={{ ...base.card, padding: 0, overflow: "hidden" }}>
+      <div style={{ ...base.card, padding: 0, overflow: "hidden", borderRadius: 14, border: `1px solid ${colors.gray[200]}` }}>
         {isLoading && (
           <div style={{ padding: "60px 24px", textAlign: "center", color: colors.gray[400] }}>
             <div style={{ fontSize: 28, marginBottom: 10 }}>⏳</div>
@@ -310,86 +305,93 @@ export default function ProcessosList() {
         )}
 
         {!isLoading && !error && data && data.length > 0 && (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", minWidth: 1300, borderCollapse: "separate", borderSpacing: 0, fontFamily: "Inter, system-ui, sans-serif", WebkitFontSmoothing: "antialiased", MozOsxFontSmoothing: "grayscale", textRendering: "optimizeLegibility" }}>
             <thead>
-              <tr style={{ background: colors.gray[50] }}>
+              <tr style={{ background: "#eef3f9" }}>
                 {[
-                  { label: "Processo",    w: "140px" },
-                  { label: "Objeto",      w: "auto" },
+                  { label: "Processo",    w: "210px" },
+                  { label: "Objeto",      w: "280px" },
                   { label: "Situação",    w: "120px" },
-                  { label: "Etapa Atual", w: "190px" },
+                  { label: "Etapa Atual", w: "220px" },
                   { label: "Em Aberto",   w: "140px" },
-                  { label: "Total",       w: "80px" },
-                  { label: "Análise",     w: "200px" },
-                  { label: "Ações",       w: "110px" },
+                  { label: "Total",       w: "100px" },
+                  { label: "Análise",     w: "180px" },
+                  { label: "Ações",       w: "130px" },
                 ].map(h => (
                   <th key={h.label} style={{
                     textAlign: "left", padding: "11px 16px",
-                    fontSize: font.size.xs, fontWeight: font.weight.semibold,
-                    color: colors.gray[500], textTransform: "uppercase", letterSpacing: 0.5,
-                    borderBottom: `2px solid ${colors.gray[200]}`, width: h.w, whiteSpace: "nowrap",
+                    fontSize: font.size.xs, fontWeight: 600,
+                    color: colors.primary[800], textTransform: "uppercase", letterSpacing: 0.4,
+                    borderBottom: `1px solid ${colors.gray[200]}`, width: h.w, whiteSpace: "nowrap",
                   }}>{h.label}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {(data as any[]).map((p: any, i: number) => {
-                const rowBg = i % 2 === 0 ? "#fff" : colors.gray[50];
+                const rowBg = i % 2 === 0 ? "#fff" : "#f9fbfd";
                 const isAcimaDaMedia = p.tempoTotal > tempoMedioGeral;
                 const faseCritica = faseCriticaDoProcesso(p.fases ?? []);
+                const etapaTexto = String(p.etapaAtual ?? "");
+                const etapaCodeMatch = etapaTexto.match(/F\d+/i);
+                const etapaCodigo = etapaCodeMatch ? etapaCodeMatch[0].toUpperCase() : "F?";
 
                 return (
                   <tr
                     key={p.id}
                     onClick={() => navigate(`/processos/${p.id}`)}
-                    style={{ cursor: "pointer", background: rowBg, transition: "background 0.1s" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = colors.primary[50])}
+                    style={{ cursor: "pointer", background: rowBg, transition: "background 0.12s ease", borderBottom: `1px solid ${colors.gray[100]}` }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "#f2f7ff")}
                     onMouseLeave={e => (e.currentTarget.style.background = rowBg)}
                   >
                     {/* Número */}
-                    <td style={{ padding: "13px 16px" }}>
-                      <div style={{ fontSize: 13, fontWeight: font.weight.semibold, color: colors.primary[700] }}>
+                    <td style={{ padding: "12px 16px", whiteSpace: "nowrap" }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: colors.primary[700], whiteSpace: "nowrap" }}>
                         {p.numeroProcesso}
                       </div>
                     </td>
 
                     {/* Objeto */}
-                    <td style={{ padding: "13px 16px" }}>
-                      <div style={{ fontSize: 13, color: colors.gray[700], overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 260 }}>
+                    <td style={{ padding: "12px 16px" }}>
+                      <div style={{ fontSize: 13, fontWeight: 400, color: colors.gray[700], overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 270 }}>
                         {p.objeto}
                       </div>
                     </td>
 
                     {/* Situação */}
-                    <td style={{ padding: "13px 16px" }}>
+                    <td style={{ padding: "12px 16px", whiteSpace: "nowrap" }}>
                       <SituacaoBadge sit={p.situacao} />
                     </td>
 
                     {/* Etapa atual */}
-                    <td style={{ padding: "13px 16px" }}>
-                      <div style={{ fontSize: 12, color: colors.gray[600], lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 190 }}>
-                        {p.etapaAtual}
+                    <td style={{ padding: "12px 16px" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 2, maxWidth: 220 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: colors.primary[700], lineHeight: 1.2 }}>{etapaCodigo}</span>
+                        <span title={etapaTexto} style={{ fontSize: 11, color: colors.gray[600], lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {etapaTexto}
+                        </span>
                       </div>
                     </td>
 
                     {/* Tempo em aberto */}
-                    <td style={{ padding: "13px 16px" }}>
+                    <td style={{ padding: "12px 16px", whiteSpace: "nowrap" }}>
                       <PriorityBadge days={p.tempoEmAberto} />
                     </td>
 
                     {/* Tempo total */}
-                    <td style={{ padding: "13px 16px", fontSize: 13, color: colors.gray[600] }}>
+                    <td style={{ padding: "12px 16px", fontSize: 13, color: colors.gray[600], whiteSpace: "nowrap", verticalAlign: "middle" }}>
                       {p.tempoTotal} dias
                     </td>
 
                     {/* Coluna de análise — NOVA */}
-                    <td style={{ padding: "13px 16px" }}>
+                    <td style={{ padding: "12px 16px" }}>
                       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                         {/* Badge: Acima da média */}
                         {isAcimaDaMedia && (
                           <span style={{
                             display: "inline-flex", alignItems: "center", gap: 4,
-                            fontSize: 10, fontWeight: 700,
+                            fontSize: 9.5, fontWeight: 700,
                             background: colors.warning.light, color: colors.warning.dark,
                             borderRadius: 6, padding: "2px 7px",
                             textTransform: "uppercase", letterSpacing: 0.4,
@@ -399,9 +401,9 @@ export default function ProcessosList() {
                         )}
                         {/* Fase crítica */}
                         {faseCritica !== "—" && (
-                          <div style={{ fontSize: 10, color: colors.gray[500], lineHeight: 1.3 }}>
+                          <div style={{ fontSize: 10.5, color: colors.gray[500], lineHeight: 1.3, maxWidth: 160 }}>
                             <span style={{ fontWeight: 700, color: colors.danger.dark }}>Fase crítica: </span>
-                            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "inline-block", maxWidth: 160, verticalAlign: "bottom" }}>
+                            <span title={faseCritica} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "inline-block", maxWidth: 120, verticalAlign: "bottom" }}>
                               {faseCritica}
                             </span>
                           </div>
@@ -410,18 +412,18 @@ export default function ProcessosList() {
                     </td>
 
                     {/* Ações */}
-                    <td style={{ padding: "13px 16px" }} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-                      <div style={{ display: "flex", gap: 6 }}>
+                    <td style={{ padding: "12px 16px", verticalAlign: "middle" }} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                         <button
                           title="Editar"
-                          style={{ ...base.btnSecondary, padding: "6px 10px", display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}
+                          style={{ ...base.btnSecondary, padding: "5px 9px", display: "flex", alignItems: "center", gap: 4, fontSize: 11.5 }}
                           onClick={() => navigate(`/processos/${p.id}/editar`)}
                         >
                           <IconEdit /> Editar
                         </button>
                         <button
                           title="Excluir"
-                          style={{ ...base.btnDanger, padding: "6px 8px", display: "flex", alignItems: "center" }}
+                          style={{ ...base.btnDanger, padding: "5px 7px", display: "flex", alignItems: "center" }}
                           onClick={() => handleDelete(p.id, p.numeroProcesso)}
                           disabled={deleteMutation.isPending}
                         >
@@ -434,6 +436,7 @@ export default function ProcessosList() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>
