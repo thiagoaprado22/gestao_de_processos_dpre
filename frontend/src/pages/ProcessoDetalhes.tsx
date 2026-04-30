@@ -378,6 +378,10 @@ export default function ProcessoDetalhes() {
         </button>
       </div>
 
+      <p style={{ fontSize: 13, color: colors.gray[500], marginTop: -8, marginBottom: 16, lineHeight: 1.4 }}>
+        Os indicadores apresentados referem-se exclusivamente às etapas do processo sob responsabilidade do DPRE, não abrangendo o fluxo completo da contratação.
+      </p>
+
       {/* ── Cards de resumo ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 14, marginBottom: 24 }}>
         {/* Etapa atual */}
@@ -396,7 +400,7 @@ export default function ProcessoDetalhes() {
           borderTop: `3px solid ${data.tempoEmAberto <= 5 ? colors.success.mid : data.tempoEmAberto <= 10 ? colors.warning.mid : colors.danger.mid}`,
         }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: colors.gray[400], textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6 }}>
-            Tempo em Aberto
+            Tempo em Aberto (DPRE)
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
             <span style={{
@@ -417,7 +421,7 @@ export default function ProcessoDetalhes() {
         {/* Tempo total */}
         <div style={{ ...base.card, padding: "16px 20px", borderTop: `3px solid ${colors.info.mid}` }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: colors.gray[400], textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6 }}>
-            Tempo Total
+            Tempo Total (DPRE)
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
             <span style={{ fontSize: 30, fontWeight: 700, color: colors.info.dark }}>{data.tempoTotal}</span>
@@ -428,7 +432,7 @@ export default function ProcessoDetalhes() {
         {/* Progresso */}
         <div style={{ ...base.card, padding: "16px 20px", borderTop: `3px solid ${colors.success.mid}` }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: colors.gray[400], textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6 }}>
-            Progresso
+            Progresso (DPRE)
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 8 }}>
             <span style={{ fontSize: 30, fontWeight: 700, color: colors.success.dark }}>{progresso}%</span>
