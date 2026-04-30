@@ -15,6 +15,7 @@ export const processos = mysqlTable("processos", {
   modalidade: varchar("modalidade", { length: 50 }).notNull().default("IRP"),
   tipoContratacao: varchar("tipo_contratacao", { length: 50 }).notNull().default("Material"),
   parecerReferencial: varchar("parecer_referencial", { length: 10 }).notNull().default("Não"),
+  divulgado: varchar("divulgado", { length: 10 }).notNull().default("Não"),
   quantidadeItens: int("quantidade_itens").default(0),
   numeroIrp: varchar("numero_irp", { length: 100 }).default(""),
   numeroPregao: varchar("numero_pregao", { length: 100 }).default(""),

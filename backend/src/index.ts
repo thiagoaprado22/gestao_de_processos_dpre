@@ -50,6 +50,7 @@ async function initDb() {
         modalidade VARCHAR(50) NOT NULL DEFAULT 'IRP',
         tipo_contratacao VARCHAR(50) NOT NULL DEFAULT 'Material',
         parecer_referencial VARCHAR(10) NOT NULL DEFAULT 'Não',
+        divulgado VARCHAR(10) NOT NULL DEFAULT 'Não',
         quantidade_itens INT DEFAULT 0,
         numero_irp VARCHAR(100) DEFAULT '',
         numero_pregao VARCHAR(100) DEFAULT '',
@@ -78,6 +79,7 @@ async function initDb() {
       )
     `);
 
+    await db.execute(sql`ALTER TABLE processos ADD COLUMN IF NOT EXISTS divulgado VARCHAR(10) NOT NULL DEFAULT 'Não'`);
     console.log("✅ Banco de dados inicializado com sucesso");
   } catch (err) {
     console.error("❌ Erro ao inicializar banco:", err);
