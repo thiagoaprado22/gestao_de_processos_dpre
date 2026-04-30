@@ -32,7 +32,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const location = useLocation();
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: colors.gray[50], fontFamily: font.family }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#f8f9fa", fontFamily: font.family }}>
       {/* ── Sidebar ── */}
       <aside style={{
         width: 248,
@@ -128,7 +128,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           background: "#fff",
           borderBottom: `1px solid ${colors.gray[200]}`,
           padding: "0 32px",
-          height: 56,
+          height: 68,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -137,16 +137,20 @@ export default function Layout({ children }: { children: ReactNode }) {
           top: 0,
           zIndex: 9,
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 13, color: colors.gray[500] }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
+            <span style={{ fontSize: 18, fontWeight: 700, color: colors.primary[800], lineHeight: 1.2 }}>
+              Painel Institucional de Processos
+            </span>
+            <span style={{ fontSize: 12, color: colors.gray[500] }}>
               Controle de Processos de Pré-Compras e Licitações
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{
-              fontSize: 12, color: colors.gray[500],
-              background: colors.gray[100],
-              padding: "4px 10px", borderRadius: 20,
+              fontSize: 12, color: colors.primary[700],
+              background: colors.primary[50],
+              border: `1px solid ${colors.primary[100]}`,
+              padding: "5px 12px", borderRadius: 20,
             }}>
               UFMG - DPRE
             </div>

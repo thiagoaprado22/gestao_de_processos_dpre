@@ -38,11 +38,11 @@ export const colors = {
 };
 
 export const shadows = {
-  xs:  "0 1px 2px rgba(0,0,0,0.05)",
-  sm:  "0 1px 4px rgba(0,0,0,0.08)",
-  md:  "0 2px 8px rgba(0,0,0,0.10)",
-  lg:  "0 4px 16px rgba(0,0,0,0.12)",
-  xl:  "0 8px 32px rgba(0,0,0,0.14)",
+  xs:  "0 1px 2px rgba(16, 42, 85, 0.05)",
+  sm:  "0 2px 8px rgba(16, 42, 85, 0.08)",
+  md:  "0 4px 14px rgba(16, 42, 85, 0.10)",
+  lg:  "0 8px 20px rgba(16, 42, 85, 0.12)",
+  xl:  "0 14px 34px rgba(16, 42, 85, 0.14)",
 };
 
 export const radius = {
@@ -96,7 +96,7 @@ export function situacaoStyle(sit: string): React.CSSProperties {
 export const base: Record<string, React.CSSProperties> = {
   card: {
     background: "#fff",
-    borderRadius: radius.md,
+    borderRadius: 12,
     boxShadow: shadows.sm,
     border: `1px solid ${colors.gray[200]}`,
   },
@@ -133,14 +133,14 @@ export const base: Record<string, React.CSSProperties> = {
   btnPrimary: {
     background: colors.primary[600],
     color: "#fff",
-    border: "none",
+    border: `1px solid ${colors.primary[600]}`,
     borderRadius: radius.sm,
     padding: "9px 20px",
     fontSize: font.size.base,
     fontWeight: font.weight.semibold,
     cursor: "pointer",
     fontFamily: font.family,
-    transition: "background 0.15s",
+    transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.15s",
   },
   btnSecondary: {
     background: "#fff",
@@ -165,7 +165,7 @@ export const base: Record<string, React.CSSProperties> = {
     fontFamily: font.family,
   },
   btnGhost: {
-    background: "transparent",
+    background: "#fff",
     color: colors.gray[600],
     border: `1px solid ${colors.gray[300]}`,
     borderRadius: radius.sm,
