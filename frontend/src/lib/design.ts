@@ -62,7 +62,7 @@ export const font = {
     xs: 11, sm: 12, base: 14, md: 15, lg: 16, xl: 18, "2xl": 22, "3xl": 28,
   },
   weight: { normal: 400, medium: 500, semibold: 600, bold: 700 },
-  family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
+  family: "'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif",
 };
 
 // ─── Funções utilitárias de estilo ───────────────────────────
