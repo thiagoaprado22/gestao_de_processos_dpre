@@ -5,7 +5,6 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { appRouter } from "./routers";
 import { createContext } from "./trpc/context";
 import { db } from "./db";
-import { processos, fasesProcesso } from "./db/schema";
 import { sql } from "drizzle-orm";
 
 const app = express();
@@ -56,7 +55,7 @@ async function initDb() {
         numero_pregao VARCHAR(100) DEFAULT '',
         valor_estimado DECIMAL(15,2) DEFAULT 0.00,
         situacao VARCHAR(30) NOT NULL DEFAULT 'Em andamento',
-        observacoes TEXT DEFAULT '',
+        observacoes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
@@ -68,7 +67,7 @@ async function initDb() {
         processo_id INT NOT NULL,
         ordem INT NOT NULL,
         nome VARCHAR(255) NOT NULL,
-        observacao TEXT DEFAULT '',
+        observacao TEXT,
         data_inicio DATE,
         data_fim DATE,
         tempo_dias INT DEFAULT 0,
