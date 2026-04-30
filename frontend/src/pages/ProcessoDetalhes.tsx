@@ -3,6 +3,29 @@ import { useNavigate, useParams } from "react-router-dom";
 import { trpc } from "../lib/trpc";
 import { colors, font, base, shadows, priorityStyle, situacaoStyle } from "../lib/design";
 
+function toIsoDate(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const raw = value.trim();
+  if (!raw) return null;
+  const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) return raw;
+  const brMatch = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (brMatch) {
+    const [, dd, mm, yyyy] = brMatch;
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString().slice(0, 10);
+}
+
+function formatDateBrSafe(value: string | null | undefined): string {
+  const iso = toIsoDate(value);
+  if (!iso) return "—";
+  const [year, month, day] = iso.split("-");
+  return `${day}/${month}/${year}`;
+}
+
 // ─── Ícones ──────────────────────────────────────────────────
 const IconArrowLeft = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -58,8 +81,8 @@ interface FaseItemProps {
 
 function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemProps) {
   const [editing, setEditing] = useState(false);
-  const [dataInicio, setDataInicio] = useState(fase.dataInicio ?? "");
-  const [dataFim, setDataFim] = useState(fase.dataFim ?? "");
+  const [dataInicio, setDataInicio] = useState(toIsoDate(fase.dataInicio) ?? "");
+  const [dataFim, setDataFim] = useState(toIsoDate(fase.dataFim) ?? "");
 
   const isCompleted = !!fase.dataFim;
   const isActive = !!fase.dataInicio && !fase.dataFim;
@@ -89,13 +112,13 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
   }
 
   function handleSave() {
-    onSave(fase.id, dataInicio || null, dataFim || null);
+    onSave(fase.id, toIsoDate(dataInicio), toIsoDate(dataFim));
     setEditing(false);
   }
 
   function handleCancel() {
-    setDataInicio(fase.dataInicio ?? "");
-    setDataFim(fase.dataFim ?? "");
+    setDataInicio(toIsoDate(fase.dataInicio) ?? "");
+    setDataFim(toIsoDate(fase.dataFim) ?? "");
     setEditing(false);
   }
 
@@ -172,7 +195,7 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
                   <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: colors.gray[500] }}>
                     <IconCalendar />
                     Início: <strong style={{ color: colors.gray[700] }}>
-                      {new Date(fase.dataInicio + "T12:00:00").toLocaleDateString("pt-BR")}
+                      {formatDateBrSafe(fase.dataInicio)}
                     </strong>
                   </div>
                 )}
@@ -180,7 +203,7 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
                   <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: colors.gray[500] }}>
                     <IconCalendar />
                     Fim: <strong style={{ color: colors.gray[700] }}>
-                      {new Date(fase.dataFim + "T12:00:00").toLocaleDateString("pt-BR")}
+                      {formatDateBrSafe(fase.dataFim)}
                     </strong>
                   </div>
                 )}
