@@ -84,8 +84,9 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
   const [dataInicio, setDataInicio] = useState(toIsoDate(fase.dataInicio) ?? "");
   const [dataFim, setDataFim] = useState(toIsoDate(fase.dataFim) ?? "");
 
-  const isCompleted = !!fase.dataFim;
-  const isActive = !!fase.dataInicio && !fase.dataFim;
+  const isNa = fase.ignorada || fase.status === "Não se aplica";
+  const isCompleted = !!fase.dataFim && !isNa;
+  const isActive = !!fase.dataInicio && !fase.dataFim && !isNa;
   const justSaved = savedId === fase.id;
 
   // Cores do nó
@@ -96,7 +97,14 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
   let statusLabel = "Pendente";
   let statusColor = colors.gray[400];
 
-  if (isCompleted) {
+  if (isNa) {
+    dotBg = colors.gray[100];
+    dotBorder = colors.gray[300];
+    cardBorder = colors.gray[200];
+    cardBg = colors.gray[50];
+    statusLabel = "Não se aplica";
+    statusColor = colors.gray[500];
+  } else if (isCompleted) {
     dotBg = colors.success.mid;
     dotBorder = colors.success.mid;
     cardBorder = `${colors.success.mid}60`;
@@ -182,7 +190,7 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
 
             <div style={{
               fontSize: 13, fontWeight: font.weight.semibold,
-              color: isCompleted || isActive ? colors.gray[800] : colors.gray[500],
+              color: isNa ? colors.gray[500] : (isCompleted || isActive ? colors.gray[800] : colors.gray[500]),
               lineHeight: 1.4,
             }}>
               {fase.nome}
@@ -231,7 +239,7 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
             )}
           </div>
 
-          <button
+          {!isNa && (<button
             style={{
               ...base.btnGhost,
               padding: "5px 10px", fontSize: 12,
@@ -240,11 +248,11 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
             onClick={() => setEditing(v => !v)}
           >
             <IconEdit /> {editing ? "Fechar" : "Editar"}
-          </button>
+          </button>)}
         </div>
 
         {/* Formulário inline */}
-        {editing && (
+        {editing && !isNa && (
           <div style={{
             padding: 16, borderTop: `1px solid ${colors.gray[100]}`,
             background: colors.gray[50],

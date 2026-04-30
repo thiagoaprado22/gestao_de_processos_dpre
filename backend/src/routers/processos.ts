@@ -30,28 +30,69 @@ function normalizarData(value: string | null | undefined): string | null {
   return parsed.toISOString().slice(0, 10);
 }
 
+
+
+function normalizarDivulgado(value: string | null | undefined): "Sim" | "Não" {
+  return value === "Sim" ? "Sim" : "Não";
+}
+
+function deveIgnorarFases(modalidade: string, divulgado: string | null | undefined): boolean {
+  const divulgadoNorm = normalizarDivulgado(divulgado);
+  return modalidade === "Pregão Tradicional" || (modalidade === "IRP" && divulgadoNorm === "Não");
+}
+
+function faseIgnorada(ordem: number, modalidade: string, divulgado: string | null | undefined): boolean {
+  return deveIgnorarFases(modalidade, divulgado) && ordem >= 2 && ordem <= 6;
+}
+
+function enriquecerFases(
+  fases: any[],
+  modalidade: string,
+  divulgado: string | null | undefined
+) {
+  return fases.map((f) => {
+    const ignored = faseIgnorada(f.ordem, modalidade, divulgado);
+    const dataInicio = f.dataInicio ? String(f.dataInicio) : null;
+    const dataFim = f.dataFim ? String(f.dataFim) : null;
+    return {
+      ...f,
+      dataInicio,
+      dataFim,
+      ignorada: ignored,
+      status: ignored ? "Não se aplica" : f.status,
+      tempoDias: ignored ? 0 : calcularTempoDias(dataInicio, dataFim),
+    };
+  });
+}
 // Determina etapa atual e tempo em aberto
 function calcularEtapaAtual(fases: Array<{
   ordem: number;
   nome: string;
   dataInicio: string | null;
   dataFim: string | null;
+  ignorada?: boolean;
 }>) {
-  // Primeira fase com dataInicio preenchida e dataFim vazia
-  const faseAtual = fases.find(f => f.dataInicio && !f.dataFim);
+  const fasesAtivas = fases.filter(f => !f.ignorada);
+
+  const faseAtual = fasesAtivas.find(f => f.dataInicio && !f.dataFim);
   if (faseAtual) {
     return {
       etapaAtual: faseAtual.nome,
       tempoEmAberto: calcularTempoDias(faseAtual.dataInicio, null),
     };
   }
-  // Se todas finalizadas
-  const todasFinalizadas = fases.every(f => f.dataFim);
-  if (todasFinalizadas && fases.length > 0) {
+
+  const proximaFase = fasesAtivas.find(f => !f.dataInicio && !f.dataFim);
+  if (proximaFase) {
+    return { etapaAtual: proximaFase.nome, tempoEmAberto: 0 };
+  }
+
+  const todasFinalizadas = fasesAtivas.every(f => f.dataFim);
+  if (todasFinalizadas && fasesAtivas.length > 0) {
     return { etapaAtual: "Processo finalizado", tempoEmAberto: 0 };
   }
-  // Nenhuma iniciada
-  return { etapaAtual: fases[0]?.nome ?? "—", tempoEmAberto: 0 };
+
+  return { etapaAtual: fasesAtivas[0]?.nome ?? "—", tempoEmAberto: 0 };
 }
 
 export const processosRouter = router({
@@ -64,6 +105,7 @@ export const processosRouter = router({
         tipoContratacao: z.string().optional(),
         busca: z.string().optional(),
         tempoAberto: z.string().optional(),
+        divulgado: z.string().optional(),
       }).optional()
     )
     .query(async ({ input }) => {
@@ -77,21 +119,15 @@ export const processosRouter = router({
             .where(eq(fasesProcesso.processoId, p.id))
             .orderBy(fasesProcesso.ordem);
 
-          const fasesComTempo = fases.map(f => ({
-            ...f,
-            dataInicio: f.dataInicio ? String(f.dataInicio) : null,
-            dataFim: f.dataFim ? String(f.dataFim) : null,
-            tempoDias: calcularTempoDias(
-              f.dataInicio ? String(f.dataInicio) : null,
-              f.dataFim ? String(f.dataFim) : null
-            ),
-          }));
+          const divulgado = normalizarDivulgado((p as any).divulgado);
+          const fasesComTempo = enriquecerFases(fases, p.modalidade, divulgado);
 
           const tempoTotal = fasesComTempo.reduce((acc, f) => acc + f.tempoDias, 0);
           const { etapaAtual, tempoEmAberto } = calcularEtapaAtual(fasesComTempo);
 
           return {
             ...p,
+            divulgado,
             valorEstimado: p.valorEstimado ? String(p.valorEstimado) : "0.00",
             fases: fasesComTempo,
             etapaAtual,
@@ -153,15 +189,8 @@ export const processosRouter = router({
         .where(eq(fasesProcesso.processoId, input.id))
         .orderBy(fasesProcesso.ordem);
 
-      const fasesComTempo = fases.map(f => ({
-        ...f,
-        dataInicio: f.dataInicio ? String(f.dataInicio) : null,
-        dataFim: f.dataFim ? String(f.dataFim) : null,
-        tempoDias: calcularTempoDias(
-          f.dataInicio ? String(f.dataInicio) : null,
-          f.dataFim ? String(f.dataFim) : null
-        ),
-      }));
+      const divulgado = normalizarDivulgado((processo as any).divulgado);
+      const fasesComTempo = enriquecerFases(fases, processo.modalidade, divulgado);
 
       const tempoTotal = fasesComTempo.reduce((acc, f) => acc + f.tempoDias, 0);
       const { etapaAtual, tempoEmAberto } = calcularEtapaAtual(fasesComTempo);
@@ -173,6 +202,7 @@ export const processosRouter = router({
 
       return {
         ...processo,
+        divulgado,
         valorEstimado: processo.valorEstimado ? String(processo.valorEstimado) : "0.00",
         fases: fasesComTempo,
         etapaAtual,
@@ -197,6 +227,7 @@ export const processosRouter = router({
         valorEstimado: z.string().default("0"),
         situacao: z.string().default("Em andamento"),
         observacoes: z.string().default(""),
+        divulgado: z.string().default("Não"),
       })
     )
     .mutation(async ({ input }) => {
@@ -212,6 +243,7 @@ export const processosRouter = router({
         valorEstimado: input.valorEstimado,
         situacao: input.situacao,
         observacoes: input.observacoes,
+        divulgado: normalizarDivulgado((input as any).divulgado),
       });
 
       const processoId = (result as any).insertId as number;
@@ -246,6 +278,7 @@ export const processosRouter = router({
         valorEstimado: z.string().default("0"),
         situacao: z.string(),
         observacoes: z.string().default(""),
+        divulgado: z.string().default("Não"),
       })
     )
     .mutation(async ({ input }) => {
@@ -285,6 +318,12 @@ export const processosRouter = router({
 
       // Calcular tempoDias
       const [fase] = await db.select().from(fasesProcesso).where(eq(fasesProcesso.id, id));
+      if (!fase) throw new Error("Fase não encontrada");
+      const [processoDaFase] = await db.select().from(processos).where(eq(processos.id, fase.processoId));
+      if (!processoDaFase) throw new Error("Processo não encontrado");
+      if (faseIgnorada(fase.ordem, processoDaFase.modalidade, (processoDaFase as any).divulgado)) {
+        throw new Error("Esta fase está marcada como Não se aplica e não pode ser editada.");
+      }
       const di = data.dataInicio !== undefined
         ? normalizarData(data.dataInicio)
         : (fase?.dataInicio ? String(fase.dataInicio) : null);
@@ -310,6 +349,9 @@ export const processosRouter = router({
     // Tempo total por processo
     const temposPorProcesso: Record<number, number> = {};
     for (const fase of allFases) {
+      const [proc] = await db.select().from(processos).where(eq(processos.id, fase.processoId));
+      if (!proc) continue;
+      if (faseIgnorada(fase.ordem, proc.modalidade, (proc as any).divulgado)) continue;
       const di = fase.dataInicio ? String(fase.dataInicio) : null;
       const df = fase.dataFim ? String(fase.dataFim) : null;
       const dias = calcularTempoDias(di, df);
@@ -324,6 +366,9 @@ export const processosRouter = router({
     // Tempo médio por fase (nome)
     const tempoPorFaseNome: Record<string, number[]> = {};
     for (const fase of allFases) {
+      const [proc] = await db.select().from(processos).where(eq(processos.id, fase.processoId));
+      if (!proc) continue;
+      if (faseIgnorada(fase.ordem, proc.modalidade, (proc as any).divulgado)) continue;
       const di = fase.dataInicio ? String(fase.dataInicio) : null;
       const df = fase.dataFim ? String(fase.dataFim) : null;
       const dias = calcularTempoDias(di, df);
@@ -350,11 +395,8 @@ export const processosRouter = router({
           .where(eq(fasesProcesso.processoId, p.id))
           .orderBy(fasesProcesso.ordem);
 
-        const fasesComTempo = fases.map(f => ({
-          ...f,
-          dataInicio: f.dataInicio ? String(f.dataInicio) : null,
-          dataFim: f.dataFim ? String(f.dataFim) : null,
-        }));
+        const divulgado = normalizarDivulgado((p as any).divulgado);
+        const fasesComTempo = enriquecerFases(fases, p.modalidade, divulgado);
 
         const { etapaAtual, tempoEmAberto } = calcularEtapaAtual(fasesComTempo);
         const tempoTotal = fasesComTempo.reduce(
