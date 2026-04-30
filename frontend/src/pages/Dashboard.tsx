@@ -33,16 +33,16 @@ const IconStar     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill=
 
 function MetricCard({ label, value, sub, icon, accent, iconBg }: any) {
   return (
-    <div style={{ ...base.card, padding: "18px 20px", borderTop: `3px solid ${accent}` }}>
+    <div style={{ ...base.card, padding: "18px 20px", borderTop: `2px solid ${accent}` }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: colors.gray[500], textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 8 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, color: colors.gray[500], textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 8 }}>
             {label}
           </div>
-          <div style={{ fontSize: 32, fontWeight: 800, color: colors.gray[900], lineHeight: 1 }}>{value}</div>
-          {sub && <div style={{ fontSize: 11, color: colors.gray[400], marginTop: 4 }}>{sub}</div>}
+          <div style={{ fontSize: 30, fontWeight: 700, color: colors.primary[800], lineHeight: 1 }}>{value}</div>
+          {sub && <div style={{ fontSize: 11, color: colors.gray[500], marginTop: 4 }}>{sub}</div>}
         </div>
-        <div style={{ width: 40, height: 40, borderRadius: 10, background: iconBg, display: "flex", alignItems: "center", justifyContent: "center", color: accent, flexShrink: 0 }}>
+        <div style={{ width: 38, height: 38, borderRadius: 10, background: iconBg, display: "flex", alignItems: "center", justifyContent: "center", color: accent, flexShrink: 0, opacity: 0.9 }}>
           {icon}
         </div>
       </div>
