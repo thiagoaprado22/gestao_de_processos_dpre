@@ -74,7 +74,7 @@ interface FaseItemProps {
   fase: any;
   index: number;
   total: number;
-  onSave: (faseId: number, dataInicio: string | null, dataFim: string | null) => void;
+  onSave: (faseId: number, dataInicio: string | null, dataFim: string | null, naoSeAplica?: boolean) => void;
   isSaving: boolean;
   savedId: number | null;
 }
@@ -121,6 +121,11 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
 
   function handleSave() {
     onSave(fase.id, toIsoDate(dataInicio), toIsoDate(dataFim));
+    setEditing(false);
+  }
+
+  function handleToggleNaoSeAplica(checked: boolean) {
+    onSave(fase.id, toIsoDate(fase.dataInicio), toIsoDate(fase.dataFim), checked);
     setEditing(false);
   }
 
@@ -239,6 +244,11 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
             )}
           </div>
 
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: colors.gray[500], cursor: "pointer" }}>
+              <input type="checkbox" checked={isNa} onChange={e => handleToggleNaoSeAplica(e.target.checked)} />
+              Não se aplica
+            </label>
           {!isNa && (<button
             style={{
               ...base.btnGhost,
@@ -249,6 +259,7 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
           >
             <IconEdit /> {editing ? "Fechar" : "Editar"}
           </button>)}
+          </div>
         </div>
 
         {/* Formulário inline */}
@@ -333,9 +344,9 @@ export default function ProcessoDetalhes() {
     setTimeout(() => setToast(null), 3000);
   }
 
-  function handleSaveFase(faseId: number, dataInicio: string | null, dataFim: string | null) {
+  function handleSaveFase(faseId: number, dataInicio: string | null, dataFim: string | null, naoSeAplica?: boolean) {
     setSavingFase(faseId);
-    updateFaseMutation.mutate({ id: faseId, dataInicio, dataFim });
+    updateFaseMutation.mutate({ id: faseId, dataInicio, dataFim, naoSeAplica });
   }
 
   if (isLoading) return (
@@ -360,8 +371,9 @@ export default function ProcessoDetalhes() {
   );
 
   const fases = (data.fases ?? []) as any[];
-  const fasesCompletas = fases.filter((f: any) => !!f.dataFim).length;
-  const progresso = fases.length > 0 ? Math.round((fasesCompletas / fases.length) * 100) : 0;
+  const fasesAplicaveis = fases.filter((f: any) => !(f.ignorada || f.status === "Não se aplica"));
+  const fasesCompletas = fasesAplicaveis.filter((f: any) => !!f.dataFim).length;
+  const progresso = fasesAplicaveis.length > 0 ? Math.round((fasesCompletas / fasesAplicaveis.length) * 100) : 0;
 
   return (
     <div style={{ maxWidth: 1000 }}>
@@ -476,7 +488,7 @@ export default function ProcessoDetalhes() {
             }} />
           </div>
           <div style={{ fontSize: 11, color: colors.gray[400], marginTop: 4 }}>
-            {fasesCompletas}/{fases.length} fases
+            {fasesCompletas}/{fasesAplicaveis.length} fases
           </div>
         </div>
       </div>

@@ -72,6 +72,7 @@ async function initDb() {
         data_inicio DATE,
         data_fim DATE,
         tempo_dias INT DEFAULT 0,
+        nao_se_aplica TINYINT(1) NOT NULL DEFAULT 0,
         status VARCHAR(30) NOT NULL DEFAULT 'Pendente',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -80,6 +81,7 @@ async function initDb() {
     `);
 
     await db.execute(sql`ALTER TABLE processos ADD COLUMN IF NOT EXISTS divulgado VARCHAR(10) NOT NULL DEFAULT 'Não'`);
+    await db.execute(sql`ALTER TABLE fases_processo ADD COLUMN IF NOT EXISTS nao_se_aplica TINYINT(1) NOT NULL DEFAULT 0`);
     console.log("✅ Banco de dados inicializado com sucesso");
   } catch (err) {
     console.error("❌ Erro ao inicializar banco:", err);
