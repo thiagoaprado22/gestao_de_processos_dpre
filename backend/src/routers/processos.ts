@@ -32,10 +32,6 @@ function normalizarData(value: string | null | undefined): string | null {
 
 
 
-function normalizarDivulgado(value: string | null | undefined): "Sim" | "Não" {
-  return value === "Sim" ? "Sim" : "Não";
-}
-
 function enriquecerFases(fases: any[]) {
   return fases.map((f) => {
     const ignored = !!f.naoSeAplica;
@@ -106,7 +102,8 @@ export const processosRouter = router({
             .where(eq(fasesProcesso.processoId, p.id))
             .orderBy(fasesProcesso.ordem);
 
-          const divulgado = normalizarDivulgado((p as any).divulgado);
+          // Campo legado: mantemos na resposta sem depender da coluna no MySQL.
+          const divulgado = "Não";
           const fasesComTempo = enriquecerFases(fases);
 
           const tempoTotal = fasesComTempo.reduce((acc, f) => acc + f.tempoDias, 0);
@@ -176,7 +173,8 @@ export const processosRouter = router({
         .where(eq(fasesProcesso.processoId, input.id))
         .orderBy(fasesProcesso.ordem);
 
-      const divulgado = normalizarDivulgado((processo as any).divulgado);
+      // Campo legado: mantemos na resposta sem depender da coluna no MySQL.
+      const divulgado = "Não";
       const fasesComTempo = enriquecerFases(fases);
 
       const tempoTotal = fasesComTempo.reduce((acc, f) => acc + f.tempoDias, 0);
@@ -214,7 +212,7 @@ export const processosRouter = router({
         valorEstimado: z.string().default("0"),
         situacao: z.string().default("Em andamento"),
         observacoes: z.string().default(""),
-        divulgado: z.string().default("Não"),
+        divulgado: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -230,7 +228,6 @@ export const processosRouter = router({
         valorEstimado: input.valorEstimado,
         situacao: input.situacao,
         observacoes: input.observacoes,
-        divulgado: normalizarDivulgado((input as any).divulgado),
       });
 
       const processoId = (result as any).insertId as number;
@@ -265,11 +262,11 @@ export const processosRouter = router({
         valorEstimado: z.string().default("0"),
         situacao: z.string(),
         observacoes: z.string().default(""),
-        divulgado: z.string().default("Não"),
+        divulgado: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
-      const { id, ...data } = input;
+      const { id, divulgado: _divulgado, ...data } = input;
       await db.update(processos).set(data).where(eq(processos.id, id));
       return { success: true };
     }),
@@ -382,7 +379,6 @@ export const processosRouter = router({
           .where(eq(fasesProcesso.processoId, p.id))
           .orderBy(fasesProcesso.ordem);
 
-        const divulgado = normalizarDivulgado((p as any).divulgado);
         const fasesComTempo = enriquecerFases(fases);
 
         const { etapaAtual, tempoEmAberto } = calcularEtapaAtual(fasesComTempo);
