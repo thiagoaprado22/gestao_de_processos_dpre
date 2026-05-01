@@ -40,7 +40,7 @@ export default function LicitacoesPrevistas() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
         <div>
           <h1 style={{ fontSize: font.size["2xl"], fontWeight: font.weight.bold, color: colors.gray[900], margin: 0 }}>
-            Licitações
+            Licitações Previstas
           </h1>
           <p style={{ fontSize: font.size.sm, color: colors.gray[500], marginTop: 4 }}>
             Acompanhamento simplificado das licitações (planejamento e execução)
