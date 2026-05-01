@@ -384,6 +384,7 @@ export default function ProcessoDetalhes() {
   const fases = (data.fases ?? []) as any[];
   const fasesCompletas = fases.filter((f: any) => !!f.dataFim).length;
   const progresso = fases.length > 0 ? Math.round((fasesCompletas / fases.length) * 100) : 0;
+  const etapaAtualNome = String(data.etapaAtual ?? "").trim() || "Etapa não definida";
 
   return (
     <div style={{ maxWidth: 1000 }}>
@@ -443,7 +444,7 @@ export default function ProcessoDetalhes() {
             Etapa Atual
           </div>
           <div style={{ fontSize: 14, fontWeight: 600, color: colors.gray[800], lineHeight: 1.4 }}>
-            {data.etapaAtual}
+            {etapaAtualNome}
           </div>
         </div>
 

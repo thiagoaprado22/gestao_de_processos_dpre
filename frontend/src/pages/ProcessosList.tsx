@@ -333,9 +333,8 @@ export default function ProcessosList() {
                 const rowBg = i % 2 === 0 ? "#fff" : "#f9fbfd";
                 const isAcimaDaMedia = p.tempoTotal > tempoMedioGeral;
                 const faseCritica = faseCriticaDoProcesso(p.fases ?? []);
-                const etapaTexto = String(p.etapaAtual ?? "");
-                const etapaCodeMatch = etapaTexto.match(/F\d+/i);
-                const etapaCodigo = etapaCodeMatch ? etapaCodeMatch[0].toUpperCase() : "F?";
+                const etapaTexto = String(p.etapaAtual ?? "").trim();
+                const etapaNome = etapaTexto || "Etapa não definida";
 
                 return (
                   <tr
@@ -367,9 +366,8 @@ export default function ProcessosList() {
                     {/* Etapa atual */}
                     <td style={{ padding: "12px 16px" }}>
                       <div style={{ display: "flex", flexDirection: "column", gap: 2, maxWidth: 220 }}>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: colors.primary[700], lineHeight: 1.2 }}>{etapaCodigo}</span>
-                        <span title={etapaTexto} style={{ fontSize: 11, color: colors.gray[600], lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {etapaTexto}
+                        <span title={etapaNome} style={{ fontSize: 12, fontWeight: 600, color: colors.primary[700], lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {etapaNome}
                         </span>
                       </div>
                     </td>
