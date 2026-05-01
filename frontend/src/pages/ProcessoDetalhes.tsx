@@ -74,7 +74,7 @@ interface FaseItemProps {
   fase: any;
   index: number;
   total: number;
-  onSave: (faseId: number, dataInicio: string | null, dataFim: string | null) => void;
+  onSave: (faseId: number, dataInicio: string | null, dataFim: string | null, naoSeAplica: boolean) => void;
   isSaving: boolean;
   savedId: number | null;
 }
@@ -83,7 +83,9 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
   const [editing, setEditing] = useState(false);
   const [dataInicio, setDataInicio] = useState(toIsoDate(fase.dataInicio) ?? "");
   const [dataFim, setDataFim] = useState(toIsoDate(fase.dataFim) ?? "");
+  const [naoSeAplica, setNaoSeAplica] = useState(Boolean(fase.naoSeAplica));
 
+  const isNaoSeAplica = Boolean(fase.naoSeAplica);
   const isCompleted = !!fase.dataFim;
   const isActive = !!fase.dataInicio && !fase.dataFim;
   const justSaved = savedId === fase.id;
@@ -96,7 +98,10 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
   let statusLabel = "Pendente";
   let statusColor = colors.gray[400];
 
-  if (isCompleted) {
+  if (isNaoSeAplica) {
+    statusLabel = "Ignorada";
+    statusColor = colors.gray[500];
+  } else if (isCompleted) {
     dotBg = colors.success.mid;
     dotBorder = colors.success.mid;
     cardBorder = `${colors.success.mid}60`;
@@ -112,13 +117,14 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
   }
 
   function handleSave() {
-    onSave(fase.id, toIsoDate(dataInicio), toIsoDate(dataFim));
+    onSave(fase.id, toIsoDate(dataInicio), toIsoDate(dataFim), naoSeAplica);
     setEditing(false);
   }
 
   function handleCancel() {
     setDataInicio(toIsoDate(fase.dataInicio) ?? "");
     setDataFim(toIsoDate(fase.dataFim) ?? "");
+    setNaoSeAplica(Boolean(fase.naoSeAplica));
     setEditing(false);
   }
 
@@ -207,7 +213,7 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
                     </strong>
                   </div>
                 )}
-                {fase.tempoDias != null && fase.tempoDias > 0 && (
+                {!isNaoSeAplica && fase.tempoDias != null && fase.tempoDias > 0 && (
                   <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: colors.gray[500] }}>
                     <IconClock />
                     Duração: <strong style={{ color: colors.gray[700] }}>{fase.tempoDias} dias</strong>
@@ -251,7 +257,27 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
             padding: 16, borderTop: `1px solid ${colors.gray[100]}`,
             background: colors.gray[50],
           }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px", marginBottom: 12 }}>
+            <label
+              title="Esta fase será ignorada nos cálculos de tempo"
+              style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, fontSize: 13, color: colors.gray[700] }}
+            >
+              <input
+                type="checkbox"
+                checked={naoSeAplica}
+                onChange={e => setNaoSeAplica(e.target.checked)}
+              />
+              Não se aplica
+            </label>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "10px 16px",
+                marginBottom: 12,
+                opacity: naoSeAplica ? 0.5 : 1,
+                cursor: naoSeAplica ? "not-allowed" : "default",
+              }}
+            >
               <div>
                 <label style={{ ...base.label, marginBottom: 4 }}>Data de Início</label>
                 <input
@@ -259,6 +285,7 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
                   style={{ ...base.input, fontSize: 13 }}
                   value={dataInicio}
                   onChange={e => setDataInicio(e.target.value)}
+                  disabled={naoSeAplica}
                 />
               </div>
               <div>
@@ -268,6 +295,7 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
                   style={{ ...base.input, fontSize: 13 }}
                   value={dataFim}
                   onChange={e => setDataFim(e.target.value)}
+                  disabled={naoSeAplica}
                 />
               </div>
             </div>
@@ -327,9 +355,9 @@ export default function ProcessoDetalhes() {
     setTimeout(() => setToast(null), 3000);
   }
 
-  function handleSaveFase(faseId: number, dataInicio: string | null, dataFim: string | null) {
+  function handleSaveFase(faseId: number, dataInicio: string | null, dataFim: string | null, naoSeAplica: boolean) {
     setSavingFase(faseId);
-    updateFaseMutation.mutate({ id: faseId, dataInicio, dataFim });
+    updateFaseMutation.mutate({ id: faseId, dataInicio, dataFim, naoSeAplica });
   }
 
   if (isLoading) return (
