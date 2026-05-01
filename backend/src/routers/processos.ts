@@ -34,13 +34,15 @@ function normalizarData(value: string | null | undefined): string | null {
 
 function enriquecerFases(fases: any[]) {
   return fases.map((f) => {
+    const naoSeAplica = Boolean(f.naoSeAplica);
     const dataInicio = f.dataInicio ? String(f.dataInicio) : null;
     const dataFim = f.dataFim ? String(f.dataFim) : null;
     return {
       ...f,
+      naoSeAplica,
       dataInicio,
       dataFim,
-      tempoDias: calcularTempoDias(dataInicio, dataFim),
+      tempoDias: naoSeAplica ? 0 : calcularTempoDias(dataInicio, dataFim),
     };
   });
 }
@@ -50,8 +52,11 @@ function calcularEtapaAtual(fases: Array<{
   nome: string;
   dataInicio: string | null;
   dataFim: string | null;
+  naoSeAplica?: boolean;
 }>) {
-  const faseAtual = fases.find(f => f.dataInicio && !f.dataFim);
+  const fasesAtivas = fases.filter(f => !f.naoSeAplica);
+
+  const faseAtual = fasesAtivas.find(f => f.dataInicio && !f.dataFim);
   if (faseAtual) {
     return {
       etapaAtual: faseAtual.nome,
@@ -59,17 +64,17 @@ function calcularEtapaAtual(fases: Array<{
     };
   }
 
-  const proximaFase = fases.find(f => !f.dataInicio && !f.dataFim);
+  const proximaFase = fasesAtivas.find(f => !f.dataInicio && !f.dataFim);
   if (proximaFase) {
     return { etapaAtual: proximaFase.nome, tempoEmAberto: 0 };
   }
 
-  const todasFinalizadas = fases.every(f => f.dataFim);
-  if (todasFinalizadas && fases.length > 0) {
+  const todasFinalizadas = fasesAtivas.every(f => f.dataFim);
+  if (todasFinalizadas && fasesAtivas.length > 0) {
     return { etapaAtual: "Processo finalizado", tempoEmAberto: 0 };
   }
 
-  return { etapaAtual: fases[0]?.nome ?? "—", tempoEmAberto: 0 };
+  return { etapaAtual: fasesAtivas[0]?.nome ?? "—", tempoEmAberto: 0 };
 }
 
 export const processosRouter = router({
@@ -274,6 +279,7 @@ export const processosRouter = router({
         dataFim: z.string().nullable().optional(),
         observacao: z.string().optional(),
         status: z.string().optional(),
+        naoSeAplica: z.boolean().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -284,18 +290,22 @@ export const processosRouter = router({
       if (data.status !== undefined) updateData.status = data.status;
       if (data.dataInicio !== undefined) updateData.dataInicio = normalizarData(data.dataInicio);
       if (data.dataFim !== undefined) updateData.dataFim = normalizarData(data.dataFim);
+      if (data.naoSeAplica !== undefined) {
+        updateData.naoSeAplica = data.naoSeAplica ? 1 : 0;
+      }
       // Calcular tempoDias
       const [fase] = await db.select().from(fasesProcesso).where(eq(fasesProcesso.id, id));
       if (!fase) throw new Error("Fase não encontrada");
       const [processoDaFase] = await db.select().from(processos).where(eq(processos.id, fase.processoId));
       if (!processoDaFase) throw new Error("Processo não encontrado");
-            const di = data.dataInicio !== undefined
+            const naoSeAplica = data.naoSeAplica !== undefined ? data.naoSeAplica : Boolean(fase?.naoSeAplica);
+      const di = data.dataInicio !== undefined
         ? normalizarData(data.dataInicio)
         : (fase?.dataInicio ? String(fase.dataInicio) : null);
       const df = data.dataFim !== undefined
         ? normalizarData(data.dataFim)
         : (fase?.dataFim ? String(fase.dataFim) : null);
-      updateData.tempoDias = calcularTempoDias(di, df);
+      updateData.tempoDias = naoSeAplica ? 0 : calcularTempoDias(di, df);
 
       await db.update(fasesProcesso).set(updateData).where(eq(fasesProcesso.id, id));
       return { success: true };
@@ -316,7 +326,7 @@ export const processosRouter = router({
     for (const fase of allFases) {
       const di = fase.dataInicio ? String(fase.dataInicio) : null;
       const df = fase.dataFim ? String(fase.dataFim) : null;
-      const dias = calcularTempoDias(di, df);
+      const dias = fase.naoSeAplica ? 0 : calcularTempoDias(di, df);
       temposPorProcesso[fase.processoId] = (temposPorProcesso[fase.processoId] ?? 0) + dias;
     }
 
@@ -330,7 +340,7 @@ export const processosRouter = router({
     for (const fase of allFases) {
       const di = fase.dataInicio ? String(fase.dataInicio) : null;
       const df = fase.dataFim ? String(fase.dataFim) : null;
-      const dias = calcularTempoDias(di, df);
+      const dias = fase.naoSeAplica ? 0 : calcularTempoDias(di, df);
       if (!tempoPorFaseNome[fase.nome]) tempoPorFaseNome[fase.nome] = [];
       tempoPorFaseNome[fase.nome].push(dias);
     }

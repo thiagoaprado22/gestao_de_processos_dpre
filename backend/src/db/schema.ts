@@ -35,6 +35,7 @@ export const fasesProcesso = mysqlTable("fases_processo", {
   dataFim: date("data_fim"),
   tempoDias: int("tempo_dias").default(0),
   status: varchar("status", { length: 30 }).notNull().default("Pendente"),
+  naoSeAplica: int("nao_se_aplica").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
