@@ -74,7 +74,7 @@ interface FaseItemProps {
   fase: any;
   index: number;
   total: number;
-  onSave: (faseId: number, dataInicio: string | null, dataFim: string | null, naoSeAplica?: boolean) => void;
+  onSave: (faseId: number, dataInicio: string | null, dataFim: string | null) => void;
   isSaving: boolean;
   savedId: number | null;
 }
@@ -84,9 +84,8 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
   const [dataInicio, setDataInicio] = useState(toIsoDate(fase.dataInicio) ?? "");
   const [dataFim, setDataFim] = useState(toIsoDate(fase.dataFim) ?? "");
 
-  const isNa = fase.ignorada || fase.status === "Não se aplica";
-  const isCompleted = !!fase.dataFim && !isNa;
-  const isActive = !!fase.dataInicio && !fase.dataFim && !isNa;
+  const isCompleted = !!fase.dataFim;
+  const isActive = !!fase.dataInicio && !fase.dataFim;
   const justSaved = savedId === fase.id;
 
   // Cores do nó
@@ -97,14 +96,7 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
   let statusLabel = "Pendente";
   let statusColor = colors.gray[400];
 
-  if (isNa) {
-    dotBg = colors.gray[100];
-    dotBorder = colors.gray[300];
-    cardBorder = colors.gray[200];
-    cardBg = colors.gray[50];
-    statusLabel = "Não se aplica";
-    statusColor = colors.gray[500];
-  } else if (isCompleted) {
+  if (isCompleted) {
     dotBg = colors.success.mid;
     dotBorder = colors.success.mid;
     cardBorder = `${colors.success.mid}60`;
@@ -121,11 +113,6 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
 
   function handleSave() {
     onSave(fase.id, toIsoDate(dataInicio), toIsoDate(dataFim));
-    setEditing(false);
-  }
-
-  function handleToggleNaoSeAplica(checked: boolean) {
-    onSave(fase.id, toIsoDate(fase.dataInicio), toIsoDate(fase.dataFim), checked);
     setEditing(false);
   }
 
@@ -195,7 +182,7 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
 
             <div style={{
               fontSize: 13, fontWeight: font.weight.semibold,
-              color: isNa ? colors.gray[500] : (isCompleted || isActive ? colors.gray[800] : colors.gray[500]),
+              color: (isCompleted || isActive ? colors.gray[800] : colors.gray[500]),
               lineHeight: 1.4,
             }}>
               {fase.nome}
@@ -245,11 +232,7 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: colors.gray[500], cursor: "pointer" }}>
-              <input type="checkbox" checked={isNa} onChange={e => handleToggleNaoSeAplica(e.target.checked)} />
-              Não se aplica
-            </label>
-          {!isNa && (<button
+          <button
             style={{
               ...base.btnGhost,
               padding: "5px 10px", fontSize: 12,
@@ -258,12 +241,12 @@ function FaseItem({ fase, index, total, onSave, isSaving, savedId }: FaseItemPro
             onClick={() => setEditing(v => !v)}
           >
             <IconEdit /> {editing ? "Fechar" : "Editar"}
-          </button>)}
+          </button>
           </div>
         </div>
 
         {/* Formulário inline */}
-        {editing && !isNa && (
+        {editing && (
           <div style={{
             padding: 16, borderTop: `1px solid ${colors.gray[100]}`,
             background: colors.gray[50],
@@ -344,9 +327,9 @@ export default function ProcessoDetalhes() {
     setTimeout(() => setToast(null), 3000);
   }
 
-  function handleSaveFase(faseId: number, dataInicio: string | null, dataFim: string | null, naoSeAplica?: boolean) {
+  function handleSaveFase(faseId: number, dataInicio: string | null, dataFim: string | null) {
     setSavingFase(faseId);
-    updateFaseMutation.mutate({ id: faseId, dataInicio, dataFim, naoSeAplica });
+    updateFaseMutation.mutate({ id: faseId, dataInicio, dataFim });
   }
 
   if (isLoading) return (
@@ -371,9 +354,8 @@ export default function ProcessoDetalhes() {
   );
 
   const fases = (data.fases ?? []) as any[];
-  const fasesAplicaveis = fases.filter((f: any) => !(f.ignorada || f.status === "Não se aplica"));
-  const fasesCompletas = fasesAplicaveis.filter((f: any) => !!f.dataFim).length;
-  const progresso = fasesAplicaveis.length > 0 ? Math.round((fasesCompletas / fasesAplicaveis.length) * 100) : 0;
+  const fasesCompletas = fases.filter((f: any) => !!f.dataFim).length;
+  const progresso = fases.length > 0 ? Math.round((fasesCompletas / fases.length) * 100) : 0;
 
   return (
     <div style={{ maxWidth: 1000 }}>
@@ -488,7 +470,7 @@ export default function ProcessoDetalhes() {
             }} />
           </div>
           <div style={{ fontSize: 11, color: colors.gray[400], marginTop: 4 }}>
-            {fasesCompletas}/{fasesAplicaveis.length} fases
+            {fasesCompletas}/{fases.length} fases
           </div>
         </div>
       </div>
