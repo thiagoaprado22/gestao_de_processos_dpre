@@ -36,22 +36,9 @@ function normalizarDivulgado(value: string | null | undefined): "Sim" | "Não" {
   return value === "Sim" ? "Sim" : "Não";
 }
 
-function deveIgnorarFases(modalidade: string, divulgado: string | null | undefined): boolean {
-  const divulgadoNorm = normalizarDivulgado(divulgado);
-  return modalidade === "Pregão Tradicional" || (modalidade === "IRP" && divulgadoNorm === "Não");
-}
-
-function faseIgnorada(ordem: number, modalidade: string, divulgado: string | null | undefined): boolean {
-  return deveIgnorarFases(modalidade, divulgado) && ordem >= 2 && ordem <= 6;
-}
-
-function enriquecerFases(
-  fases: any[],
-  modalidade: string,
-  divulgado: string | null | undefined
-) {
+function enriquecerFases(fases: any[]) {
   return fases.map((f) => {
-    const ignored = faseIgnorada(f.ordem, modalidade, divulgado);
+    const ignored = !!f.naoSeAplica;
     const dataInicio = f.dataInicio ? String(f.dataInicio) : null;
     const dataFim = f.dataFim ? String(f.dataFim) : null;
     return {
@@ -120,7 +107,7 @@ export const processosRouter = router({
             .orderBy(fasesProcesso.ordem);
 
           const divulgado = normalizarDivulgado((p as any).divulgado);
-          const fasesComTempo = enriquecerFases(fases, p.modalidade, divulgado);
+          const fasesComTempo = enriquecerFases(fases);
 
           const tempoTotal = fasesComTempo.reduce((acc, f) => acc + f.tempoDias, 0);
           const { etapaAtual, tempoEmAberto } = calcularEtapaAtual(fasesComTempo);
@@ -190,7 +177,7 @@ export const processosRouter = router({
         .orderBy(fasesProcesso.ordem);
 
       const divulgado = normalizarDivulgado((processo as any).divulgado);
-      const fasesComTempo = enriquecerFases(fases, processo.modalidade, divulgado);
+      const fasesComTempo = enriquecerFases(fases);
 
       const tempoTotal = fasesComTempo.reduce((acc, f) => acc + f.tempoDias, 0);
       const { etapaAtual, tempoEmAberto } = calcularEtapaAtual(fasesComTempo);
@@ -305,6 +292,7 @@ export const processosRouter = router({
         dataFim: z.string().nullable().optional(),
         observacao: z.string().optional(),
         status: z.string().optional(),
+        naoSeAplica: z.boolean().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -315,22 +303,25 @@ export const processosRouter = router({
       if (data.status !== undefined) updateData.status = data.status;
       if (data.dataInicio !== undefined) updateData.dataInicio = normalizarData(data.dataInicio);
       if (data.dataFim !== undefined) updateData.dataFim = normalizarData(data.dataFim);
+      if (data.naoSeAplica !== undefined) {
+        updateData.naoSeAplica = data.naoSeAplica ? 1 : 0;
+        if (data.naoSeAplica) updateData.status = "Não se aplica";
+        else if (data.status === undefined) updateData.status = "Pendente";
+      }
 
       // Calcular tempoDias
       const [fase] = await db.select().from(fasesProcesso).where(eq(fasesProcesso.id, id));
       if (!fase) throw new Error("Fase não encontrada");
       const [processoDaFase] = await db.select().from(processos).where(eq(processos.id, fase.processoId));
       if (!processoDaFase) throw new Error("Processo não encontrado");
-      if (faseIgnorada(fase.ordem, processoDaFase.modalidade, (processoDaFase as any).divulgado)) {
-        throw new Error("Esta fase está marcada como Não se aplica e não pode ser editada.");
-      }
-      const di = data.dataInicio !== undefined
+            const di = data.dataInicio !== undefined
         ? normalizarData(data.dataInicio)
         : (fase?.dataInicio ? String(fase.dataInicio) : null);
       const df = data.dataFim !== undefined
         ? normalizarData(data.dataFim)
         : (fase?.dataFim ? String(fase.dataFim) : null);
-      updateData.tempoDias = calcularTempoDias(di, df);
+      const faseNaoSeAplica = data.naoSeAplica !== undefined ? data.naoSeAplica : !!fase.naoSeAplica;
+      updateData.tempoDias = faseNaoSeAplica ? 0 : calcularTempoDias(di, df);
 
       await db.update(fasesProcesso).set(updateData).where(eq(fasesProcesso.id, id));
       return { success: true };
@@ -349,9 +340,7 @@ export const processosRouter = router({
     // Tempo total por processo
     const temposPorProcesso: Record<number, number> = {};
     for (const fase of allFases) {
-      const [proc] = await db.select().from(processos).where(eq(processos.id, fase.processoId));
-      if (!proc) continue;
-      if (faseIgnorada(fase.ordem, proc.modalidade, (proc as any).divulgado)) continue;
+      if (!!fase.naoSeAplica) continue;
       const di = fase.dataInicio ? String(fase.dataInicio) : null;
       const df = fase.dataFim ? String(fase.dataFim) : null;
       const dias = calcularTempoDias(di, df);
@@ -366,9 +355,7 @@ export const processosRouter = router({
     // Tempo médio por fase (nome)
     const tempoPorFaseNome: Record<string, number[]> = {};
     for (const fase of allFases) {
-      const [proc] = await db.select().from(processos).where(eq(processos.id, fase.processoId));
-      if (!proc) continue;
-      if (faseIgnorada(fase.ordem, proc.modalidade, (proc as any).divulgado)) continue;
+      if (!!fase.naoSeAplica) continue;
       const di = fase.dataInicio ? String(fase.dataInicio) : null;
       const df = fase.dataFim ? String(fase.dataFim) : null;
       const dias = calcularTempoDias(di, df);
@@ -396,7 +383,7 @@ export const processosRouter = router({
           .orderBy(fasesProcesso.ordem);
 
         const divulgado = normalizarDivulgado((p as any).divulgado);
-        const fasesComTempo = enriquecerFases(fases, p.modalidade, divulgado);
+        const fasesComTempo = enriquecerFases(fases);
 
         const { etapaAtual, tempoEmAberto } = calcularEtapaAtual(fasesComTempo);
         const tempoTotal = fasesComTempo.reduce(
