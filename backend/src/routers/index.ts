@@ -1,10 +1,10 @@
 import { router } from "../trpc/trpc";
-import { licitacoesPrevistasRouter } from "./licitacoesPrevistas";
+import { licitacoesRouter } from "./licitacoesPrevistas";
 import { processosRouter } from "./processos";
 
 export const appRouter = router({
   processos: processosRouter,
-  licitacoesPrevistas: licitacoesPrevistasRouter,
+  licitacoes: licitacoesRouter,
 });
 
 export type AppRouter = typeof appRouter;

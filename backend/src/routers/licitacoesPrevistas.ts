@@ -1,8 +1,7 @@
-import { randomUUID } from "crypto";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db";
-import { licitacoesPrevistas } from "../db/schema";
+import { licitacoes } from "../db/schema";
 import { protectedProcedure, router } from "../trpc/trpc";
 
 const licitacaoSchema = z.object({
@@ -12,31 +11,36 @@ const licitacaoSchema = z.object({
   status: z.enum(["Prevista", "Em andamento", "Finalizada"]).default("Prevista"),
 });
 
-export const licitacoesPrevistasRouter = router({
-  listLicitacoes: protectedProcedure.query(async () => {
-    return db.select().from(licitacoesPrevistas).orderBy(desc(licitacoesPrevistas.createdAt));
+export const licitacoesRouter = router({
+  list: protectedProcedure.query(async () => {
+    return db.select().from(licitacoes).orderBy(desc(licitacoes.createdAt));
   }),
 
-  createLicitacao: protectedProcedure.input(licitacaoSchema).mutation(async ({ input }) => {
-    const id = randomUUID();
-    await db.insert(licitacoesPrevistas).values({ ...input, id });
-    return { id, success: true };
+  create: protectedProcedure.input(licitacaoSchema).mutation(async ({ input }) => {
+    const result = await db.insert(licitacoes).values({
+      objeto: input.objeto,
+      tipo: input.tipo,
+      solicitante: input.solicitante,
+      status: input.status,
+    });
+
+    return { id: result[0].insertId, success: true };
   }),
 
-  updateLicitacao: protectedProcedure
-    .input(licitacaoSchema.partial().extend({ id: z.string().uuid() }))
+  update: protectedProcedure
+    .input(licitacaoSchema.partial().extend({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const { id, ...values } = input;
       if (Object.keys(values).length === 0) return { success: true };
 
-      await db.update(licitacoesPrevistas).set(values).where(eq(licitacoesPrevistas.id, id));
+      await db.update(licitacoes).set(values).where(eq(licitacoes.id, id));
       return { success: true };
     }),
 
-  deleteLicitacao: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+  delete: protectedProcedure
+    .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
-      await db.delete(licitacoesPrevistas).where(eq(licitacoesPrevistas.id, input.id));
+      await db.delete(licitacoes).where(eq(licitacoes.id, input.id));
       return { success: true };
     }),
 });

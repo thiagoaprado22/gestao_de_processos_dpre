@@ -7,7 +7,7 @@ type TipoLicitacao = "Material" | "Serviço";
 
 export default function LicitacoesPrevistas() {
   const utils = trpc.useUtils();
-  const { data: licitacoes = [] } = trpc.licitacoesPrevistas.listLicitacoes.useQuery();
+  const { data: licitacoes = [] } = trpc.licitacoes.list.useQuery();
   const [novaLicitacao, setNovaLicitacao] = useState({
     objeto: "",
     tipo: "Material" as TipoLicitacao,
@@ -15,19 +15,19 @@ export default function LicitacoesPrevistas() {
     status: "Prevista" as StatusLicitacao,
   });
 
-  const createLicitacao = trpc.licitacoesPrevistas.createLicitacao.useMutation({
+  const createLicitacao = trpc.licitacoes.create.useMutation({
     onSuccess: () => {
       setNovaLicitacao({ objeto: "", tipo: "Material", solicitante: "", status: "Prevista" });
-      utils.licitacoesPrevistas.listLicitacoes.invalidate();
+      utils.licitacoes.list.invalidate();
     },
   });
 
-  const updateLicitacao = trpc.licitacoesPrevistas.updateLicitacao.useMutation({
-    onSuccess: () => utils.licitacoesPrevistas.listLicitacoes.invalidate(),
+  const updateLicitacao = trpc.licitacoes.update.useMutation({
+    onSuccess: () => utils.licitacoes.list.invalidate(),
   });
 
-  const deleteLicitacao = trpc.licitacoesPrevistas.deleteLicitacao.useMutation({
-    onSuccess: () => utils.licitacoesPrevistas.listLicitacoes.invalidate(),
+  const deleteLicitacao = trpc.licitacoes.delete.useMutation({
+    onSuccess: () => utils.licitacoes.list.invalidate(),
   });
 
   const possuiLinhaVazia = useMemo(
