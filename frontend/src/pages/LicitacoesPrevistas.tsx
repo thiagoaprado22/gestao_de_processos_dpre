@@ -43,6 +43,14 @@ export default function LicitacoesPrevistas() {
     solicitante: "",
     status: "Prevista" as StatusLicitacao,
   });
+  const [edicaoId, setEdicaoId] = useState<number | null>(null);
+  const [licitacaoEmEdicao, setLicitacaoEmEdicao] = useState({
+    mesPrevisto: "" as "" | MesPrevisto,
+    objeto: "",
+    tipo: "Material" as TipoLicitacao,
+    solicitante: "",
+    status: "Prevista" as StatusLicitacao,
+  });
 
   const createLicitacao = trpc.licitacoes.create.useMutation({
     onSuccess: () => {
@@ -74,6 +82,32 @@ export default function LicitacoesPrevistas() {
   function adicionarLicitacao() {
     if (possuiLinhaVazia) return;
     createLicitacao.mutate({ ...novaLicitacao, mesPrevisto: novaLicitacao.mesPrevisto || null });
+  }
+
+  const edicaoInvalida = !licitacaoEmEdicao.objeto.trim() || !licitacaoEmEdicao.solicitante.trim();
+
+  function iniciarEdicao(linha: (typeof licitacoes)[number]) {
+    setEdicaoId(linha.id);
+    setLicitacaoEmEdicao({
+      mesPrevisto: (linha.mesPrevisto as MesPrevisto | null) ?? "",
+      objeto: linha.objeto,
+      tipo: linha.tipo as TipoLicitacao,
+      solicitante: linha.solicitante,
+      status: linha.status as StatusLicitacao,
+    });
+  }
+
+  function cancelarEdicao() {
+    setEdicaoId(null);
+    setLicitacaoEmEdicao({ mesPrevisto: "", objeto: "", tipo: "Material", solicitante: "", status: "Prevista" });
+  }
+
+  function salvarEdicao() {
+    if (!edicaoId || edicaoInvalida) return;
+    updateLicitacao.mutate(
+      { id: edicaoId, ...licitacaoEmEdicao, mesPrevisto: licitacaoEmEdicao.mesPrevisto || null },
+      { onSuccess: () => cancelarEdicao() },
+    );
   }
 
   return (
@@ -109,43 +143,115 @@ export default function LicitacoesPrevistas() {
             </tr>
           </thead>
           <tbody>
-            {licitacoes.map((linha) => (
+            {licitacoes.map((linha) => {
+              const emEdicao = edicaoId === linha.id;
+              return (
               <tr key={linha.id}>
                 <td style={tdStyle}>
-                  {linha.mesPrevisto ? (
+                  {emEdicao ? (
+                    <select
+                      style={{ ...base.input, cursor: "pointer" }}
+                      value={licitacaoEmEdicao.mesPrevisto}
+                      onChange={(e) => setLicitacaoEmEdicao((prev) => ({ ...prev, mesPrevisto: e.target.value as "" | MesPrevisto }))}
+                    >
+                      <option value="">Selecione</option>
+                      {MESES.map((mes) => (
+                        <option key={mes} value={mes}>
+                          {mes}
+                        </option>
+                      ))}
+                    </select>
+                  ) : linha.mesPrevisto ? (
                     <span style={{ ...base.badge, background: colors.gray[100], color: colors.gray[700] }}>{linha.mesPrevisto}</span>
                   ) : (
                     <span style={{ color: colors.gray[400] }}>Não definido</span>
                   )}
                 </td>
-                <td style={tdStyle}>{linha.objeto}</td>
-                <td style={tdStyle}>{linha.tipo}</td>
-                <td style={tdStyle}>{linha.solicitante}</td>
                 <td style={tdStyle}>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  {emEdicao ? (
+                    <input
+                      style={base.input}
+                      value={licitacaoEmEdicao.objeto}
+                      onChange={(e) => setLicitacaoEmEdicao((prev) => ({ ...prev, objeto: e.target.value }))}
+                    />
+                  ) : (
+                    linha.objeto
+                  )}
+                </td>
+                <td style={tdStyle}>
+                  {emEdicao ? (
                     <select
-                      style={{ ...base.input, cursor: "pointer", minWidth: 140 }}
-                      value={linha.status}
-                      onChange={(e) =>
-                        updateLicitacao.mutate({ id: linha.id, status: e.target.value as StatusLicitacao })
-                      }
+                      style={{ ...base.input, cursor: "pointer" }}
+                      value={licitacaoEmEdicao.tipo}
+                      onChange={(e) => setLicitacaoEmEdicao((prev) => ({ ...prev, tipo: e.target.value as TipoLicitacao }))}
                     >
-                      <option value="Prevista">Prevista</option>
-                      <option value="Em andamento">Em andamento</option>
-                      <option value="Finalizada">Finalizada</option>
+                      <option value="Material">Material</option>
+                      <option value="Serviço">Serviço</option>
                     </select>
+                  ) : (
+                    linha.tipo
+                  )}
+                </td>
+                <td style={tdStyle}>
+                  {emEdicao ? (
+                    <input
+                      style={base.input}
+                      value={licitacaoEmEdicao.solicitante}
+                      onChange={(e) => setLicitacaoEmEdicao((prev) => ({ ...prev, solicitante: e.target.value }))}
+                    />
+                  ) : (
+                    linha.solicitante
+                  )}
+                </td>
+                <td style={tdStyle}>
+                  {emEdicao ? (
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <select
+                        style={{ ...base.input, cursor: "pointer", minWidth: 140 }}
+                        value={licitacaoEmEdicao.status}
+                        onChange={(e) => setLicitacaoEmEdicao((prev) => ({ ...prev, status: e.target.value as StatusLicitacao }))}
+                      >
+                        <option value="Prevista">Prevista</option>
+                        <option value="Em andamento">Em andamento</option>
+                        <option value="Finalizada">Finalizada</option>
+                      </select>
+                      <span style={{ ...base.badge, ...statusStyle(licitacaoEmEdicao.status), whiteSpace: "nowrap" }}>
+                        {licitacaoEmEdicao.status}
+                      </span>
+                    </div>
+                  ) : (
                     <span style={{ ...base.badge, ...statusStyle(linha.status as StatusLicitacao), whiteSpace: "nowrap" }}>
                       {linha.status}
                     </span>
+                  )}
+                </td>
+                <td style={{ ...tdStyle, width: 220 }}>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {emEdicao ? (
+                      <>
+                        <button
+                          style={{ ...base.btnPrimary, cursor: edicaoInvalida ? "not-allowed" : "pointer", opacity: edicaoInvalida ? 0.6 : 1 }}
+                          disabled={edicaoInvalida || updateLicitacao.isPending}
+                          onClick={salvarEdicao}
+                        >
+                          Salvar
+                        </button>
+                        <button style={base.btnGhost} onClick={cancelarEdicao}>
+                          Cancelar
+                        </button>
+                      </>
+                    ) : (
+                      <button style={base.btnGhost} onClick={() => iniciarEdicao(linha)}>
+                        Editar
+                      </button>
+                    )}
+                    <button style={base.btnDanger} onClick={() => deleteLicitacao.mutate({ id: linha.id })}>
+                      Excluir
+                    </button>
                   </div>
                 </td>
-                <td style={{ ...tdStyle, width: 130 }}>
-                  <button style={base.btnDanger} onClick={() => deleteLicitacao.mutate({ id: linha.id })}>
-                    Excluir
-                  </button>
-                </td>
               </tr>
-            ))}
+            )})}
 
             <tr>
               <td style={tdStyle}>
