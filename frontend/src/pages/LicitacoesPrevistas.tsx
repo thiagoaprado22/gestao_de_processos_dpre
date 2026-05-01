@@ -4,11 +4,40 @@ import { trpc } from "../lib/trpc";
 
 type StatusLicitacao = "Prevista" | "Em andamento" | "Finalizada";
 type TipoLicitacao = "Material" | "Serviço";
+type MesPrevisto =
+  | "Janeiro"
+  | "Fevereiro"
+  | "Março"
+  | "Abril"
+  | "Maio"
+  | "Junho"
+  | "Julho"
+  | "Agosto"
+  | "Setembro"
+  | "Outubro"
+  | "Novembro"
+  | "Dezembro";
+
+const MESES: MesPrevisto[] = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
 
 export default function LicitacoesPrevistas() {
   const utils = trpc.useUtils();
   const { data: licitacoes = [] } = trpc.licitacoes.list.useQuery();
   const [novaLicitacao, setNovaLicitacao] = useState({
+    mesPrevisto: "" as "" | MesPrevisto,
     objeto: "",
     tipo: "Material" as TipoLicitacao,
     solicitante: "",
@@ -17,7 +46,7 @@ export default function LicitacoesPrevistas() {
 
   const createLicitacao = trpc.licitacoes.create.useMutation({
     onSuccess: () => {
-      setNovaLicitacao({ objeto: "", tipo: "Material", solicitante: "", status: "Prevista" });
+      setNovaLicitacao({ mesPrevisto: "", objeto: "", tipo: "Material", solicitante: "", status: "Prevista" });
       utils.licitacoes.list.invalidate();
     },
   });
@@ -30,6 +59,13 @@ export default function LicitacoesPrevistas() {
     onSuccess: () => utils.licitacoes.list.invalidate(),
   });
 
+  const resumo = useMemo(() => {
+    const previstas = licitacoes.filter((item) => item.status === "Prevista").length;
+    const andamento = licitacoes.filter((item) => item.status === "Em andamento").length;
+    const finalizadas = licitacoes.filter((item) => item.status === "Finalizada").length;
+    return { total: licitacoes.length, previstas, andamento, finalizadas };
+  }, [licitacoes]);
+
   const possuiLinhaVazia = useMemo(
     () => !novaLicitacao.objeto.trim() || !novaLicitacao.solicitante.trim(),
     [novaLicitacao],
@@ -37,7 +73,7 @@ export default function LicitacoesPrevistas() {
 
   function adicionarLicitacao() {
     if (possuiLinhaVazia) return;
-    createLicitacao.mutate(novaLicitacao);
+    createLicitacao.mutate({ ...novaLicitacao, mesPrevisto: novaLicitacao.mesPrevisto || null });
   }
 
   return (
@@ -53,12 +89,20 @@ export default function LicitacoesPrevistas() {
         </div>
       </div>
 
+      <div style={resumoGridStyle}>
+        <ResumoCard titulo="Total de licitações" valor={resumo.total} />
+        <ResumoCard titulo="Previstas" valor={resumo.previstas} />
+        <ResumoCard titulo="Em andamento" valor={resumo.andamento} />
+        <ResumoCard titulo="Finalizadas" valor={resumo.finalizadas} />
+      </div>
+
       <div style={{ ...base.card, padding: 16 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
           <thead>
             <tr>
+              <th style={thStyle}>Mês Previsto</th>
               <th style={thStyle}>Objeto da Licitação</th>
-              <th style={thStyle}>Tipo (Material ou Serviço)</th>
+              <th style={thStyle}>Tipo</th>
               <th style={thStyle}>Solicitante</th>
               <th style={thStyle}>Status</th>
               <th style={thStyle}>Ações</th>
@@ -67,6 +111,13 @@ export default function LicitacoesPrevistas() {
           <tbody>
             {licitacoes.map((linha) => (
               <tr key={linha.id}>
+                <td style={tdStyle}>
+                  {linha.mesPrevisto ? (
+                    <span style={{ ...base.badge, background: colors.gray[100], color: colors.gray[700] }}>{linha.mesPrevisto}</span>
+                  ) : (
+                    <span style={{ color: colors.gray[400] }}>Não definido</span>
+                  )}
+                </td>
                 <td style={tdStyle}>{linha.objeto}</td>
                 <td style={tdStyle}>{linha.tipo}</td>
                 <td style={tdStyle}>{linha.solicitante}</td>
@@ -97,6 +148,20 @@ export default function LicitacoesPrevistas() {
             ))}
 
             <tr>
+              <td style={tdStyle}>
+                <select
+                  style={{ ...base.input, cursor: "pointer" }}
+                  value={novaLicitacao.mesPrevisto}
+                  onChange={(e) => setNovaLicitacao((prev) => ({ ...prev, mesPrevisto: e.target.value as "" | MesPrevisto }))}
+                >
+                  <option value="">Selecione</option>
+                  {MESES.map((mes) => (
+                    <option key={mes} value={mes}>
+                      {mes}
+                    </option>
+                  ))}
+                </select>
+              </td>
               <td style={tdStyle}>
                 <input
                   style={base.input}
@@ -156,16 +221,33 @@ export default function LicitacoesPrevistas() {
   );
 }
 
+function ResumoCard({ titulo, valor }: { titulo: string; valor: number }) {
+  return (
+    <div style={{ ...base.card, padding: 14 }}>
+      <div style={{ color: colors.gray[600], fontSize: font.size.xs, marginBottom: 4 }}>{titulo}</div>
+      <div style={{ color: colors.gray[900], fontSize: font.size.xl, fontWeight: font.weight.bold }}>{valor}</div>
+    </div>
+  );
+}
+
+const resumoGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gap: 12,
+  marginBottom: 12,
+};
+
 const thStyle: CSSProperties = {
   textAlign: "left",
-  padding: "10px 8px",
+  padding: "12px 10px",
   fontSize: font.size.xs,
-  color: colors.gray[600],
+  color: colors.gray[700],
+  background: colors.gray[50],
   borderBottom: `1px solid ${colors.gray[200]}`,
 };
 
 const tdStyle: CSSProperties = {
-  padding: "10px 8px",
+  padding: "12px 10px",
   verticalAlign: "top",
   borderBottom: `1px solid ${colors.gray[100]}`,
 };
@@ -173,5 +255,5 @@ const tdStyle: CSSProperties = {
 function statusStyle(status: StatusLicitacao): CSSProperties {
   if (status === "Em andamento") return { background: colors.info.light, color: colors.info.dark };
   if (status === "Finalizada") return { background: colors.success.light, color: colors.success.dark };
-  return { background: colors.gray[100], color: colors.gray[700] };
+  return { background: colors.gray[200], color: colors.gray[700] };
 }
