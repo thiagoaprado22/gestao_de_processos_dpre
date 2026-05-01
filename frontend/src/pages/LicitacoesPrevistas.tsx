@@ -1,39 +1,44 @@
-import { CSSProperties, useState } from "react";
+import { CSSProperties, useMemo, useState } from "react";
 import { base, colors, font } from "../lib/design";
+import { trpc } from "../lib/trpc";
 
 type StatusLicitacao = "Prevista" | "Em andamento" | "Finalizada";
-
-type Licitacao = {
-  objeto: string;
-  tipo: "Material" | "Serviço";
-  solicitante: string;
-  status: StatusLicitacao;
-};
+type TipoLicitacao = "Material" | "Serviço";
 
 export default function LicitacoesPrevistas() {
-  const [licitacoes, setLicitacoes] = useState<Licitacao[]>([
-    { objeto: "", tipo: "Material", solicitante: "", status: "Prevista" },
-  ]);
+  const utils = trpc.useUtils();
+  const { data: licitacoes = [] } = trpc.licitacoesPrevistas.listLicitacoes.useQuery();
+  const [novaLicitacao, setNovaLicitacao] = useState({
+    objeto: "",
+    tipo: "Material" as TipoLicitacao,
+    solicitante: "",
+    status: "Prevista" as StatusLicitacao,
+  });
 
-  function adicionarLinha() {
-    setLicitacoes((prev) => [...prev, { objeto: "", tipo: "Material", solicitante: "", status: "Prevista" }]);
-  }
+  const createLicitacao = trpc.licitacoesPrevistas.createLicitacao.useMutation({
+    onSuccess: () => {
+      setNovaLicitacao({ objeto: "", tipo: "Material", solicitante: "", status: "Prevista" });
+      utils.licitacoesPrevistas.listLicitacoes.invalidate();
+    },
+  });
 
-  function removerLinha(index: number) {
-    setLicitacoes((prev) => prev.filter((_, i) => i !== index));
-  }
+  const updateLicitacao = trpc.licitacoesPrevistas.updateLicitacao.useMutation({
+    onSuccess: () => utils.licitacoesPrevistas.listLicitacoes.invalidate(),
+  });
 
-  function atualizarLinha(index: number, campo: keyof Licitacao, valor: string) {
-    setLicitacoes((prev) =>
-      prev.map((item, i) =>
-        i === index ? { ...item, [campo]: valor } : item,
-      ),
-    );
-  }
+  const deleteLicitacao = trpc.licitacoesPrevistas.deleteLicitacao.useMutation({
+    onSuccess: () => utils.licitacoesPrevistas.listLicitacoes.invalidate(),
+  });
 
-  const possuiLinhaVazia = licitacoes.some(
-    (linha) => !linha.objeto.trim() || !linha.solicitante.trim(),
+  const possuiLinhaVazia = useMemo(
+    () => !novaLicitacao.objeto.trim() || !novaLicitacao.solicitante.trim(),
+    [novaLicitacao],
   );
+
+  function adicionarLicitacao() {
+    if (possuiLinhaVazia) return;
+    createLicitacao.mutate(novaLicitacao);
+  }
 
   return (
     <div style={{ maxWidth: 1200 }}>
@@ -46,9 +51,6 @@ export default function LicitacoesPrevistas() {
             Acompanhamento simplificado das licitações (planejamento e execução)
           </p>
         </div>
-        <button style={base.btnPrimary} onClick={adicionarLinha}>
-          Nova Licitação
-        </button>
       </div>
 
       <div style={{ ...base.card, padding: 16 }}>
@@ -63,75 +65,92 @@ export default function LicitacoesPrevistas() {
             </tr>
           </thead>
           <tbody>
-            {licitacoes.map((linha, index) => (
-              <tr key={index}>
+            {licitacoes.map((linha) => (
+              <tr key={linha.id}>
+                <td style={tdStyle}>{linha.objeto}</td>
+                <td style={tdStyle}>{linha.tipo}</td>
+                <td style={tdStyle}>{linha.solicitante}</td>
                 <td style={tdStyle}>
-                  <input
-                    style={base.input}
-                    value={linha.objeto}
-                    onChange={(e) => atualizarLinha(index, "objeto", e.target.value)}
-                    placeholder="Ex.: Aquisição de equipamentos"
-                  />
-                </td>
-                <td style={tdStyle}>
-                  <select
-                    style={{ ...base.input, cursor: "pointer" }}
-                    value={linha.tipo}
-                    onChange={(e) => atualizarLinha(index, "tipo", e.target.value)}
-                  >
-                    <option value="Material">Material</option>
-                    <option value="Serviço">Serviço</option>
-                  </select>
-                </td>
-                <td style={tdStyle}>
-                  <input
-                    style={base.input}
-                    value={linha.solicitante}
-                    onChange={(e) => atualizarLinha(index, "solicitante", e.target.value)}
-                    placeholder="Ex.: Departamento solicitante"
-                  />
-                </td>
-                <td style={tdStyle}>
-                  <label style={base.label}>Status da Licitação</label>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <select
                       style={{ ...base.input, cursor: "pointer", minWidth: 140 }}
                       value={linha.status}
-                      onChange={(e) => atualizarLinha(index, "status", e.target.value)}
+                      onChange={(e) =>
+                        updateLicitacao.mutate({ id: linha.id, status: e.target.value as StatusLicitacao })
+                      }
                     >
                       <option value="Prevista">Prevista</option>
                       <option value="Em andamento">Em andamento</option>
                       <option value="Finalizada">Finalizada</option>
                     </select>
-                    <span style={{ ...base.badge, ...statusStyle(linha.status), whiteSpace: "nowrap" }}>{linha.status}</span>
+                    <span style={{ ...base.badge, ...statusStyle(linha.status as StatusLicitacao), whiteSpace: "nowrap" }}>
+                      {linha.status}
+                    </span>
                   </div>
                 </td>
                 <td style={{ ...tdStyle, width: 130 }}>
-                  <button
-                    style={base.btnDanger}
-                    onClick={() => removerLinha(index)}
-                    disabled={licitacoes.length === 1}
-                    title={licitacoes.length === 1 ? "Mantenha ao menos uma linha" : "Remover linha"}
-                  >
-                    Remover linha
+                  <button style={base.btnDanger} onClick={() => deleteLicitacao.mutate({ id: linha.id })}>
+                    Excluir
                   </button>
                 </td>
               </tr>
             ))}
+
+            <tr>
+              <td style={tdStyle}>
+                <input
+                  style={base.input}
+                  value={novaLicitacao.objeto}
+                  onChange={(e) => setNovaLicitacao((prev) => ({ ...prev, objeto: e.target.value }))}
+                  placeholder="Ex.: Aquisição de equipamentos"
+                />
+              </td>
+              <td style={tdStyle}>
+                <select
+                  style={{ ...base.input, cursor: "pointer" }}
+                  value={novaLicitacao.tipo}
+                  onChange={(e) => setNovaLicitacao((prev) => ({ ...prev, tipo: e.target.value as TipoLicitacao }))}
+                >
+                  <option value="Material">Material</option>
+                  <option value="Serviço">Serviço</option>
+                </select>
+              </td>
+              <td style={tdStyle}>
+                <input
+                  style={base.input}
+                  value={novaLicitacao.solicitante}
+                  onChange={(e) => setNovaLicitacao((prev) => ({ ...prev, solicitante: e.target.value }))}
+                  placeholder="Ex.: Departamento solicitante"
+                />
+              </td>
+              <td style={tdStyle}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <select
+                    style={{ ...base.input, cursor: "pointer", minWidth: 140 }}
+                    value={novaLicitacao.status}
+                    onChange={(e) => setNovaLicitacao((prev) => ({ ...prev, status: e.target.value as StatusLicitacao }))}
+                  >
+                    <option value="Prevista">Prevista</option>
+                    <option value="Em andamento">Em andamento</option>
+                    <option value="Finalizada">Finalizada</option>
+                  </select>
+                  <span style={{ ...base.badge, ...statusStyle(novaLicitacao.status), whiteSpace: "nowrap" }}>
+                    {novaLicitacao.status}
+                  </span>
+                </div>
+              </td>
+              <td style={tdStyle}>
+                <button
+                  style={{ ...base.btnPrimary, cursor: possuiLinhaVazia ? "not-allowed" : "pointer", opacity: possuiLinhaVazia ? 0.6 : 1 }}
+                  disabled={possuiLinhaVazia || createLicitacao.isPending}
+                  onClick={adicionarLicitacao}
+                >
+                  Adicionar
+                </button>
+              </td>
+            </tr>
           </tbody>
         </table>
-
-        {possuiLinhaVazia && (
-          <p style={{ color: colors.warning.dark, fontSize: font.size.xs, margin: "10px 0 0" }}>
-            Preencha objeto e solicitante para evitar linhas vazias.
-          </p>
-        )}
-      </div>
-
-      <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}>
-        <button style={{ ...base.btnGhost, cursor: possuiLinhaVazia ? "not-allowed" : "pointer", opacity: possuiLinhaVazia ? 0.6 : 1 }} disabled={possuiLinhaVazia}>
-          Adicionar
-        </button>
       </div>
     </div>
   );
@@ -150,7 +169,6 @@ const tdStyle: CSSProperties = {
   verticalAlign: "top",
   borderBottom: `1px solid ${colors.gray[100]}`,
 };
-
 
 function statusStyle(status: StatusLicitacao): CSSProperties {
   if (status === "Em andamento") return { background: colors.info.light, color: colors.info.dark };
