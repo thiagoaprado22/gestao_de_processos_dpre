@@ -26,7 +26,7 @@ const navItems = [
   { to: "/dashboard",      label: "Dashboard",       Icon: IconDashboard },
   { to: "/processos",      label: "Processos",       Icon: IconList },
   { to: "/processos/novo", label: "Novo Processo",   Icon: IconPlus },
-  { to: "/licitacoes-previstas", label: "Licitações 2026", Icon: IconList },
+  { to: "/licitacoes-previstas", label: "Licitações", Icon: IconList },
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {
