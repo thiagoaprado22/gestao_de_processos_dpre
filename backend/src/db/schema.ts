@@ -9,6 +9,12 @@ import {
   boolean,
 } from "drizzle-orm/mysql-core";
 
+export { licitacoesPrevistas } from "./schema/licitacoesPrevistas";
+export type {
+  LicitacaoPrevista,
+  NewLicitacaoPrevista,
+} from "./schema/licitacoesPrevistas";
+
 export const processos = mysqlTable("processos", {
   id: int("id").autoincrement().primaryKey(),
   numeroProcesso: varchar("numero_processo", { length: 100 }).notNull(),
