@@ -34,16 +34,13 @@ function normalizarData(value: string | null | undefined): string | null {
 
 function enriquecerFases(fases: any[]) {
   return fases.map((f) => {
-    const ignored = !!f.naoSeAplica;
     const dataInicio = f.dataInicio ? String(f.dataInicio) : null;
     const dataFim = f.dataFim ? String(f.dataFim) : null;
     return {
       ...f,
       dataInicio,
       dataFim,
-      ignorada: ignored,
-      status: ignored ? "Não se aplica" : f.status,
-      tempoDias: ignored ? 0 : calcularTempoDias(dataInicio, dataFim),
+      tempoDias: calcularTempoDias(dataInicio, dataFim),
     };
   });
 }
@@ -53,11 +50,8 @@ function calcularEtapaAtual(fases: Array<{
   nome: string;
   dataInicio: string | null;
   dataFim: string | null;
-  ignorada?: boolean;
 }>) {
-  const fasesAtivas = fases.filter(f => !f.ignorada);
-
-  const faseAtual = fasesAtivas.find(f => f.dataInicio && !f.dataFim);
+  const faseAtual = fases.find(f => f.dataInicio && !f.dataFim);
   if (faseAtual) {
     return {
       etapaAtual: faseAtual.nome,
@@ -65,17 +59,17 @@ function calcularEtapaAtual(fases: Array<{
     };
   }
 
-  const proximaFase = fasesAtivas.find(f => !f.dataInicio && !f.dataFim);
+  const proximaFase = fases.find(f => !f.dataInicio && !f.dataFim);
   if (proximaFase) {
     return { etapaAtual: proximaFase.nome, tempoEmAberto: 0 };
   }
 
-  const todasFinalizadas = fasesAtivas.every(f => f.dataFim);
-  if (todasFinalizadas && fasesAtivas.length > 0) {
+  const todasFinalizadas = fases.every(f => f.dataFim);
+  if (todasFinalizadas && fases.length > 0) {
     return { etapaAtual: "Processo finalizado", tempoEmAberto: 0 };
   }
 
-  return { etapaAtual: fasesAtivas[0]?.nome ?? "—", tempoEmAberto: 0 };
+  return { etapaAtual: fases[0]?.nome ?? "—", tempoEmAberto: 0 };
 }
 
 export const processosRouter = router({
@@ -280,7 +274,6 @@ export const processosRouter = router({
         dataFim: z.string().nullable().optional(),
         observacao: z.string().optional(),
         status: z.string().optional(),
-        naoSeAplica: z.boolean().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -291,12 +284,6 @@ export const processosRouter = router({
       if (data.status !== undefined) updateData.status = data.status;
       if (data.dataInicio !== undefined) updateData.dataInicio = normalizarData(data.dataInicio);
       if (data.dataFim !== undefined) updateData.dataFim = normalizarData(data.dataFim);
-      if (data.naoSeAplica !== undefined) {
-        updateData.naoSeAplica = data.naoSeAplica ? 1 : 0;
-        if (data.naoSeAplica) updateData.status = "Não se aplica";
-        else if (data.status === undefined) updateData.status = "Pendente";
-      }
-
       // Calcular tempoDias
       const [fase] = await db.select().from(fasesProcesso).where(eq(fasesProcesso.id, id));
       if (!fase) throw new Error("Fase não encontrada");
@@ -308,8 +295,7 @@ export const processosRouter = router({
       const df = data.dataFim !== undefined
         ? normalizarData(data.dataFim)
         : (fase?.dataFim ? String(fase.dataFim) : null);
-      const faseNaoSeAplica = data.naoSeAplica !== undefined ? data.naoSeAplica : !!fase.naoSeAplica;
-      updateData.tempoDias = faseNaoSeAplica ? 0 : calcularTempoDias(di, df);
+      updateData.tempoDias = calcularTempoDias(di, df);
 
       await db.update(fasesProcesso).set(updateData).where(eq(fasesProcesso.id, id));
       return { success: true };
@@ -328,7 +314,6 @@ export const processosRouter = router({
     // Tempo total por processo
     const temposPorProcesso: Record<number, number> = {};
     for (const fase of allFases) {
-      if (!!fase.naoSeAplica) continue;
       const di = fase.dataInicio ? String(fase.dataInicio) : null;
       const df = fase.dataFim ? String(fase.dataFim) : null;
       const dias = calcularTempoDias(di, df);
@@ -343,7 +328,6 @@ export const processosRouter = router({
     // Tempo médio por fase (nome)
     const tempoPorFaseNome: Record<string, number[]> = {};
     for (const fase of allFases) {
-      if (!!fase.naoSeAplica) continue;
       const di = fase.dataInicio ? String(fase.dataInicio) : null;
       const df = fase.dataFim ? String(fase.dataFim) : null;
       const dias = calcularTempoDias(di, df);
