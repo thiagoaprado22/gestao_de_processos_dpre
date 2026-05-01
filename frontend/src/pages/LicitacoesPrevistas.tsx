@@ -1,19 +1,22 @@
 import { CSSProperties, useState } from "react";
 import { base, colors, font } from "../lib/design";
 
+type StatusLicitacao = "Prevista" | "Em andamento" | "Finalizada";
+
 type Licitacao = {
   objeto: string;
   tipo: "Material" | "Serviço";
   solicitante: string;
+  status: StatusLicitacao;
 };
 
 export default function LicitacoesPrevistas() {
   const [licitacoes, setLicitacoes] = useState<Licitacao[]>([
-    { objeto: "", tipo: "Material", solicitante: "" },
+    { objeto: "", tipo: "Material", solicitante: "", status: "Prevista" },
   ]);
 
   function adicionarLinha() {
-    setLicitacoes((prev) => [...prev, { objeto: "", tipo: "Material", solicitante: "" }]);
+    setLicitacoes((prev) => [...prev, { objeto: "", tipo: "Material", solicitante: "", status: "Prevista" }]);
   }
 
   function removerLinha(index: number) {
@@ -37,10 +40,10 @@ export default function LicitacoesPrevistas() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
         <div>
           <h1 style={{ fontSize: font.size["2xl"], fontWeight: font.weight.bold, color: colors.gray[900], margin: 0 }}>
-            Licitações Previstas 2026
+            Licitações
           </h1>
           <p style={{ fontSize: font.size.sm, color: colors.gray[500], marginTop: 4 }}>
-            Planejamento anual de contratações
+            Acompanhamento simplificado das licitações (planejamento e execução)
           </p>
         </div>
         <button style={base.btnPrimary} onClick={adicionarLinha}>
@@ -55,6 +58,7 @@ export default function LicitacoesPrevistas() {
               <th style={thStyle}>Objeto da Licitação</th>
               <th style={thStyle}>Tipo (Material ou Serviço)</th>
               <th style={thStyle}>Solicitante</th>
+              <th style={thStyle}>Status</th>
               <th style={thStyle}>Ações</th>
             </tr>
           </thead>
@@ -86,6 +90,21 @@ export default function LicitacoesPrevistas() {
                     onChange={(e) => atualizarLinha(index, "solicitante", e.target.value)}
                     placeholder="Ex.: Departamento solicitante"
                   />
+                </td>
+                <td style={tdStyle}>
+                  <label style={base.label}>Status da Licitação</label>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <select
+                      style={{ ...base.input, cursor: "pointer", minWidth: 140 }}
+                      value={linha.status}
+                      onChange={(e) => atualizarLinha(index, "status", e.target.value)}
+                    >
+                      <option value="Prevista">Prevista</option>
+                      <option value="Em andamento">Em andamento</option>
+                      <option value="Finalizada">Finalizada</option>
+                    </select>
+                    <span style={{ ...base.badge, ...statusStyle(linha.status), whiteSpace: "nowrap" }}>{linha.status}</span>
+                  </div>
                 </td>
                 <td style={{ ...tdStyle, width: 130 }}>
                   <button
@@ -131,3 +150,10 @@ const tdStyle: CSSProperties = {
   verticalAlign: "top",
   borderBottom: `1px solid ${colors.gray[100]}`,
 };
+
+
+function statusStyle(status: StatusLicitacao): CSSProperties {
+  if (status === "Em andamento") return { background: colors.info.light, color: colors.info.dark };
+  if (status === "Finalizada") return { background: colors.success.light, color: colors.success.dark };
+  return { background: colors.gray[100], color: colors.gray[700] };
+}
