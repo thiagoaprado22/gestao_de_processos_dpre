@@ -333,8 +333,13 @@ export default function ProcessosList() {
                 const rowBg = i % 2 === 0 ? "#fff" : "#f9fbfd";
                 const isAcimaDaMedia = p.tempoTotal > tempoMedioGeral;
                 const faseCritica = faseCriticaDoProcesso(p.fases ?? []);
-                const etapaTexto = String(p.etapaAtual ?? "").trim();
-                const etapaNome = etapaTexto || "Etapa não definida";
+                const etapaTextoBruto = String(p.etapaAtual ?? "").trim();
+                const etapaNomeLimpo = etapaTextoBruto
+                  .replace(/^f\s*\??\s*[A-Za-z0-9_-]*\s*(?:[-:–—]\s*)?/i, "")
+                  .trim();
+                const etapaNome = etapaNomeLimpo && etapaNomeLimpo !== "—"
+                  ? etapaNomeLimpo
+                  : "Etapa não definida";
 
                 return (
                   <tr
