@@ -102,7 +102,6 @@ interface FormData {
   modalidade: string;
   tipoContratacao: string;
   parecerReferencial: string;
-  divulgado: string;
   quantidadeItens: string;
   numeroIrp: string;
   numeroPregao: string;
@@ -117,7 +116,6 @@ const initialForm: FormData = {
   modalidade: "IRP",
   tipoContratacao: "Material",
   parecerReferencial: "Não",
-  divulgado: "Não",
   quantidadeItens: "0",
   numeroIrp: "",
   numeroPregao: "",
@@ -150,7 +148,6 @@ export default function ProcessoForm() {
         modalidade: processo.modalidade,
         tipoContratacao: processo.tipoContratacao,
         parecerReferencial: processo.parecerReferencial,
-        divulgado: processo.divulgado ?? "Não",
         quantidadeItens: String(processo.quantidadeItens ?? 0),
         numeroIrp: processo.numeroIrp ?? "",
         numeroPregao: processo.numeroPregao ?? "",
@@ -325,12 +322,6 @@ export default function ProcessoForm() {
               </select>
             </Field>
 
-            <Field label="Divulgado">
-              <select style={selectStyle} value={form.divulgado} onChange={e => set("divulgado", e.target.value)}>
-                <option>Não</option>
-                <option>Sim</option>
-              </select>
-            </Field>
 
             <Field label="Tipo de Contratação">
               <select style={selectStyle} value={form.tipoContratacao} onChange={e => set("tipoContratacao", e.target.value)}>

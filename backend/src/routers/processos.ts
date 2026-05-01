@@ -88,7 +88,6 @@ export const processosRouter = router({
         tipoContratacao: z.string().optional(),
         busca: z.string().optional(),
         tempoAberto: z.string().optional(),
-        divulgado: z.string().optional(),
       }).optional()
     )
     .query(async ({ input }) => {
@@ -102,8 +101,6 @@ export const processosRouter = router({
             .where(eq(fasesProcesso.processoId, p.id))
             .orderBy(fasesProcesso.ordem);
 
-          // Campo legado: mantemos na resposta sem depender da coluna no MySQL.
-          const divulgado = "Não";
           const fasesComTempo = enriquecerFases(fases);
 
           const tempoTotal = fasesComTempo.reduce((acc, f) => acc + f.tempoDias, 0);
@@ -111,7 +108,6 @@ export const processosRouter = router({
 
           return {
             ...p,
-            divulgado,
             valorEstimado: p.valorEstimado ? String(p.valorEstimado) : "0.00",
             fases: fasesComTempo,
             etapaAtual,
@@ -173,8 +169,6 @@ export const processosRouter = router({
         .where(eq(fasesProcesso.processoId, input.id))
         .orderBy(fasesProcesso.ordem);
 
-      // Campo legado: mantemos na resposta sem depender da coluna no MySQL.
-      const divulgado = "Não";
       const fasesComTempo = enriquecerFases(fases);
 
       const tempoTotal = fasesComTempo.reduce((acc, f) => acc + f.tempoDias, 0);
@@ -187,7 +181,6 @@ export const processosRouter = router({
 
       return {
         ...processo,
-        divulgado,
         valorEstimado: processo.valorEstimado ? String(processo.valorEstimado) : "0.00",
         fases: fasesComTempo,
         etapaAtual,
@@ -212,7 +205,6 @@ export const processosRouter = router({
         valorEstimado: z.string().default("0"),
         situacao: z.string().default("Em andamento"),
         observacoes: z.string().default(""),
-        divulgado: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -262,11 +254,10 @@ export const processosRouter = router({
         valorEstimado: z.string().default("0"),
         situacao: z.string(),
         observacoes: z.string().default(""),
-        divulgado: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
-      const { id, divulgado: _divulgado, ...data } = input;
+      const { id, ...data } = input;
       await db.update(processos).set(data).where(eq(processos.id, id));
       return { success: true };
     }),

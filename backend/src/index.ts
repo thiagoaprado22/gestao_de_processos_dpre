@@ -79,8 +79,8 @@ async function initDb() {
       )
     `);
 
-    // IMPORTANTE: removida lógica de ALTER TABLE em runtime para evitar
-    // falhas de inicialização e alterações perigosas automáticas.
+    // Removido ALTER TABLE automático por incompatibilidade com MySQL (IF NOT EXISTS não suportado).
+    // Implementar via migration futura.
     console.log("✅ Banco de dados inicializado com sucesso");
   } catch (err) {
     console.error("❌ Erro ao inicializar banco:", err);
