@@ -1,0 +1,2 @@
+ALTER TABLE `fases_processo`
+ADD COLUMN `nao_se_aplica` BOOLEAN NOT NULL DEFAULT FALSE;

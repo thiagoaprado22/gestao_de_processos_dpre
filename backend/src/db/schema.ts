@@ -6,6 +6,7 @@ import {
   decimal,
   timestamp,
   date,
+  boolean,
 } from "drizzle-orm/mysql-core";
 
 export const processos = mysqlTable("processos", {
@@ -35,7 +36,7 @@ export const fasesProcesso = mysqlTable("fases_processo", {
   dataFim: date("data_fim"),
   tempoDias: int("tempo_dias").default(0),
   status: varchar("status", { length: 30 }).notNull().default("Pendente"),
-  naoSeAplica: int("nao_se_aplica").notNull().default(0),
+  naoSeAplica: boolean("nao_se_aplica").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
