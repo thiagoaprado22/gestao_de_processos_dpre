@@ -26,6 +26,31 @@ function PriorityBadge({ days }: { days: number }) {
   );
 }
 
+
+function parseDataInicial(processo: any): Date | null {
+  const valor = processo?.data_chegada ?? processo?.data_inicial ?? processo?.created_at ?? processo?.createdAt;
+  if (!valor) return null;
+  const data = new Date(valor);
+  return Number.isNaN(data.getTime()) ? null : data;
+}
+
+function calcularDiasEmAberto(processo: any): number | null {
+  if (processo?.situacao === "Finalizado") return 0;
+  const dataInicial = parseDataInicial(processo);
+  if (!dataInicial) return null;
+
+  const agora = new Date();
+  const diffMs = agora.getTime() - dataInicial.getTime();
+  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+}
+
+function formatarEmAberto(processo: any): string {
+  if (processo?.situacao === "Finalizado") return "0 dias em aberto";
+  const dias = calcularDiasEmAberto(processo);
+  if (dias === null) return "Sem data inicial";
+  return `${dias} dias em aberto`;
+}
+
 function SituacaoBadge({ sit }: { sit: string }) {
   return <span style={{ ...base.badge, ...situacaoStyle(sit), fontSize: 11, padding: "3px 8px", whiteSpace: "nowrap" }}>{sit}</span>;
 }
@@ -108,7 +133,7 @@ export default function ProcessosList() {
         p.situacao,
         `"${p.etapaAtual.replace(/"/g, '""')}"`,
         `"${faseCritica.replace(/"/g, '""')}"`,
-        p.tempoEmAberto,
+        formatarEmAberto(p),
         p.tempoTotal,
         acima,
       ];
@@ -334,11 +359,9 @@ export default function ProcessosList() {
                 const isAcimaDaMedia = p.tempoTotal > tempoMedioGeral;
                 const faseCritica = faseCriticaDoProcesso(p.fases ?? []);
                 const etapaTextoBruto = String(p.etapaAtual ?? "").trim();
-                const etapaNomeLimpo = etapaTextoBruto
-                  .replace(/^f\s*\??\s*[A-Za-z0-9_-]*\s*(?:[-:–—]\s*)?/i, "")
-                  .trim();
-                const etapaNome = etapaNomeLimpo && etapaNomeLimpo !== "—"
-                  ? etapaNomeLimpo
+                const etapaSemPrefixo = etapaTextoBruto.replace(/^f\s*\??\s*\d*\s*(?:[-:–—>]\s*)?/i, "").trim();
+                const etapaNome = etapaSemPrefixo && !/^f\s*\??\s*\d*$/i.test(etapaSemPrefixo)
+                  ? etapaSemPrefixo
                   : "Etapa não definida";
 
                 return (
@@ -379,7 +402,13 @@ export default function ProcessosList() {
 
                     {/* Tempo em aberto */}
                     <td style={{ padding: "12px 16px", whiteSpace: "nowrap" }}>
-                      <PriorityBadge days={p.tempoEmAberto} />
+                      {(() => {
+                        const diasEmAberto = calcularDiasEmAberto(p);
+                        if (diasEmAberto === null) {
+                          return <span style={{ fontSize: 12, color: colors.gray[500], fontWeight: 500 }}>Sem data inicial</span>;
+                        }
+                        return <PriorityBadge days={diasEmAberto} />;
+                      })()}
                     </td>
 
                     {/* Tempo total */}
