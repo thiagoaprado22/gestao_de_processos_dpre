@@ -77,6 +77,18 @@ function calcularEtapaAtual(fases: Array<{
   return { etapaAtual: fasesAtivas[0]?.nome ?? "—", tempoEmAberto: 0 };
 }
 
+async function criarFasesPadraoParaProcesso(processoId: number) {
+  for (const fase of FASES_PADRAO) {
+    await db.insert(fasesProcesso).values({
+      processoId,
+      ordem: fase.ordem,
+      nome: fase.nome,
+      observacao: fase.observacao,
+      status: "Pendente",
+    });
+  }
+}
+
 export const processosRouter = router({
   // Listar processos com filtros
   list: protectedProcedure
@@ -224,17 +236,35 @@ export const processosRouter = router({
       const processoId = (result as any).insertId as number;
 
       // Criar fases padrão automaticamente
-      for (const fase of FASES_PADRAO) {
-        await db.insert(fasesProcesso).values({
-          processoId,
-          ordem: fase.ordem,
-          nome: fase.nome,
-          observacao: fase.observacao,
-          status: "Pendente",
-        });
-      }
+      await criarFasesPadraoParaProcesso(processoId);
 
       return { id: processoId, success: true };
+    }),
+
+  // Rotina administrativa temporária para corrigir processos sem fases
+  preencherFasesAusentes: protectedProcedure
+    .mutation(async () => {
+      const todosProcessos = await db.select({ id: processos.id }).from(processos);
+      let processosCorrigidos = 0;
+
+      for (const processo of todosProcessos) {
+        const [faseExistente] = await db
+          .select({ id: fasesProcesso.id })
+          .from(fasesProcesso)
+          .where(eq(fasesProcesso.processoId, processo.id))
+          .limit(1);
+
+        if (!faseExistente) {
+          await criarFasesPadraoParaProcesso(processo.id);
+          processosCorrigidos += 1;
+        }
+      }
+
+      return {
+        success: true,
+        processosVerificados: todosProcessos.length,
+        processosCorrigidos,
+      };
     }),
 
   // Editar processo
